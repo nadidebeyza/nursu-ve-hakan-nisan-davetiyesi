@@ -187,74 +187,154 @@
         <img src="bride-and-groom.png" alt="Gelin ve Damat" class="bride-groom-image">
     </div>
     <script>
+        console.log('Script yüklendi');
         let youtubePlayer;
+        let playerReady = false;
         
-        // YouTube IFrame API callback
-        function onYouTubeIframeAPIReady() {
-            console.log('YouTube API hazır');
-            youtubePlayer = new YT.Player('youtube-music', {
-                height: '1',
-                width: '1',
-                videoId: 'GxldQ9eX2wo',
-                playerVars: {
-                    'autoplay': 1,
-                    'loop': 1,
-                    'playlist': 'GxldQ9eX2wo',
-                    'controls': 0,
-                    'showinfo': 0,
-                    'modestbranding': 1,
-                    'mute': 1,
-                    'enablejsapi': 1
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange,
-                    'onError': onPlayerError
-                }
-            });
+        // Check if YT is available
+        function checkYouTubeAPI() {
+            console.log('YouTube API kontrol ediliyor...');
+            if (typeof YT !== 'undefined' && YT.Player) {
+                console.log('YouTube API bulundu!');
+                initYouTubePlayer();
+            } else {
+                console.log('YouTube API henüz yüklenmedi, bekleniyor...');
+                setTimeout(checkYouTubeAPI, 100);
+            }
+        }
+        
+        // Initialize YouTube Player
+        function initYouTubePlayer() {
+            console.log('Player başlatılıyor...');
+            try {
+                youtubePlayer = new YT.Player('youtube-music', {
+                    height: '1',
+                    width: '1',
+                    videoId: 'GxldQ9eX2wo',
+                    playerVars: {
+                        'autoplay': 1,
+                        'loop': 1,
+                        'playlist': 'GxldQ9eX2wo',
+                        'controls': 0,
+                        'showinfo': 0,
+                        'modestbranding': 1,
+                        'mute': 1,
+                        'enablejsapi': 1
+                    },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange,
+                        'onError': onPlayerError
+                    }
+                });
+                console.log('Player oluşturuldu');
+            } catch (e) {
+                console.error('Player oluşturulurken hata:', e);
+            }
+        }
+        
+        // YouTube IFrame API callback (backup)
+        window.onYouTubeIframeAPIReady = function() {
+            console.log('onYouTubeIframeAPIReady çağrıldı');
+            if (!playerReady) {
+                initYouTubePlayer();
+            }
+        };
+        
+        // Start checking for API when page loads
+        window.addEventListener('load', () => {
+            console.log('Sayfa yüklendi, API kontrolü başlatılıyor');
+            checkYouTubeAPI();
+        });
+        
+        // Also check immediately
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', checkYouTubeAPI);
+        } else {
+            checkYouTubeAPI();
         }
         
         function onPlayerReady(event) {
-            console.log('Player hazır');
-            // Start muted for autoplay compatibility
-            event.target.mute();
-            // Try to play the video
-            event.target.playVideo();
-            console.log('Video oynatılmaya başlandı (sessiz)');
+            console.log('✅ Player hazır!');
+            playerReady = true;
             
-            // Try to unmute after user interaction
-            const tryUnmute = () => {
-                try {
-                    event.target.unMute();
-                    console.log('Ses açıldı');
-                    // Remove event listeners after successful unmute
-                    document.removeEventListener('click', tryUnmute);
-                    document.removeEventListener('touchstart', tryUnmute);
-                } catch (e) {
-                    console.log('Ses açılamadı, kullanıcı etkileşimi bekleniyor:', e);
+            // Set the global youtubePlayer variable to the actual player instance
+            youtubePlayer = event.target;
+            console.log('youtubePlayer set edildi:', youtubePlayer);
+            
+            // Start muted for autoplay compatibility
+            try {
+                youtubePlayer.mute();
+                console.log('Sessiz mod aktif');
+            } catch (e) {
+                console.log('Sessiz mod ayarlanamadı:', e);
+            }
+            
+            // Try to play the video
+            try {
+                youtubePlayer.playVideo();
+                console.log('▶️ Video oynatılmaya başlandı (sessiz)');
+            } catch (e) {
+                console.error('Video oynatılamadı:', e);
+            }
+            
+            // Global function to unmute and play
+            window.unmuteAndPlay = function() {
+                console.log('Ses açılmaya çalışılıyor...');
+                
+                // Use postMessage directly to iframe (most reliable method)
+                const iframe = document.getElementById('youtube-music');
+                if (iframe && iframe.contentWindow) {
+                    // Send unMute command
+                    iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+                    console.log('✅ postMessage ile unMute gönderildi');
+                    
+                    // Send playVideo command
+                    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                    console.log('✅ postMessage ile playVideo gönderildi');
+                    
+                    // Also try setVolume to 100
+                    iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
+                    console.log('✅ postMessage ile setVolume(100) gönderildi');
+                } else {
+                    console.error('iframe bulunamadı');
                 }
+                
+                console.log('🔊 Ses açıldı ve video oynatılıyor!');
+                // Remove event listeners after successful unmute
+                document.removeEventListener('click', window.unmuteAndPlay);
+                document.removeEventListener('touchstart', window.unmuteAndPlay);
+                document.removeEventListener('keydown', window.unmuteAndPlay);
             };
             
-            // Try to unmute on any user interaction
-            document.addEventListener('click', tryUnmute, { once: true });
-            document.addEventListener('touchstart', tryUnmute, { once: true });
+            // Try to unmute on any user interaction (multiple events)
+            document.addEventListener('click', window.unmuteAndPlay, { once: true });
+            document.addEventListener('touchstart', window.unmuteAndPlay, { once: true });
+            document.addEventListener('keydown', window.unmuteAndPlay, { once: true });
             
-            // Also try to unmute after a delay (in case autoplay works)
-            setTimeout(() => {
-                try {
-                    event.target.unMute();
-                    console.log('Ses açıldı (gecikmeli)');
-                } catch (e) {
-                    console.log('Gecikmeli ses açma başarısız');
+            // Also try on mouse move (some browsers accept this)
+            let mouseMoveTried = false;
+            document.addEventListener('mousemove', function() {
+                if (!mouseMoveTried) {
+                    mouseMoveTried = true;
+                    setTimeout(() => {
+                        window.unmuteAndPlay();
+                    }, 100);
                 }
-            }, 2000);
+            }, { once: true });
         }
         
         function onPlayerStateChange(event) {
             console.log('Player durumu değişti:', event.data);
-            // YT.PlayerState.PLAYING = 1
+            // YT.PlayerState.PLAYING = 1, PAUSED = 2, ENDED = 0
             if (event.data === YT.PlayerState.PLAYING) {
-                console.log('Müzik çalıyor');
+                console.log('▶️ Müzik çalıyor');
+            } else if (event.data === YT.PlayerState.PAUSED) {
+                console.log('⏸️ Video duraklatıldı');
+                // If paused, might need user interaction to resume
+                console.log('Video duraklatıldı, kullanıcı etkileşimi bekleniyor...');
+            } else if (event.data === YT.PlayerState.ENDED) {
+                console.log('⏹️ Video bitti');
             }
         }
         
