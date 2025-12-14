@@ -14,8 +14,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rozha+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
+    <!-- Hidden YouTube Music Player -->
+    <div id="youtube-music"></div>
+    
     <div class="tables-container">
         <div class="table-item">
             <img src="guest-table.png" alt="Misafir Masası" class="guest-table-image">
@@ -182,6 +187,81 @@
         <img src="bride-and-groom.png" alt="Gelin ve Damat" class="bride-groom-image">
     </div>
     <script>
+        let youtubePlayer;
+        
+        // YouTube IFrame API callback
+        function onYouTubeIframeAPIReady() {
+            console.log('YouTube API hazır');
+            youtubePlayer = new YT.Player('youtube-music', {
+                height: '1',
+                width: '1',
+                videoId: 'GxldQ9eX2wo',
+                playerVars: {
+                    'autoplay': 1,
+                    'loop': 1,
+                    'playlist': 'GxldQ9eX2wo',
+                    'controls': 0,
+                    'showinfo': 0,
+                    'modestbranding': 1,
+                    'mute': 1,
+                    'enablejsapi': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+        
+        function onPlayerReady(event) {
+            console.log('Player hazır');
+            // Start muted for autoplay compatibility
+            event.target.mute();
+            // Try to play the video
+            event.target.playVideo();
+            console.log('Video oynatılmaya başlandı (sessiz)');
+            
+            // Try to unmute after user interaction
+            const tryUnmute = () => {
+                try {
+                    event.target.unMute();
+                    console.log('Ses açıldı');
+                    // Remove event listeners after successful unmute
+                    document.removeEventListener('click', tryUnmute);
+                    document.removeEventListener('touchstart', tryUnmute);
+                } catch (e) {
+                    console.log('Ses açılamadı, kullanıcı etkileşimi bekleniyor:', e);
+                }
+            };
+            
+            // Try to unmute on any user interaction
+            document.addEventListener('click', tryUnmute, { once: true });
+            document.addEventListener('touchstart', tryUnmute, { once: true });
+            
+            // Also try to unmute after a delay (in case autoplay works)
+            setTimeout(() => {
+                try {
+                    event.target.unMute();
+                    console.log('Ses açıldı (gecikmeli)');
+                } catch (e) {
+                    console.log('Gecikmeli ses açma başarısız');
+                }
+            }, 2000);
+        }
+        
+        function onPlayerStateChange(event) {
+            console.log('Player durumu değişti:', event.data);
+            // YT.PlayerState.PLAYING = 1
+            if (event.data === YT.PlayerState.PLAYING) {
+                console.log('Müzik çalıyor');
+            }
+        }
+        
+        function onPlayerError(event) {
+            console.error('Player hatası:', event.data);
+        }
+        
         function hideCutTables() {
             const container = document.querySelector('.tables-container');
             const tables = document.querySelectorAll('.table-item');

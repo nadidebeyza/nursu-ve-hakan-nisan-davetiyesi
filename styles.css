@@ -5,6 +5,23 @@
     box-sizing: border-box;
 }
 
+/* Hidden YouTube Music Player */
+#youtube-music {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
+}
+
+#youtube-music iframe {
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0;
+}
+
 html, body {
     height: 100%;
     overflow: hidden;
