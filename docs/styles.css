@@ -406,7 +406,7 @@ body.show-frame {
     .tables-container {
         grid-template-columns: repeat(4, 1fr);
         gap: 4px;
-        padding: 5px 4px;
+        padding: 20px 4px 5px 4px;
         max-width: 100%;
         justify-items: center;
         height: calc(100vh - 20px);
