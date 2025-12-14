@@ -967,7 +967,7 @@ body.show-frame {
 }
 
 /* Responsive sizing for names */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 768px) and (min-width: 481px) {
     .logo-image {
         max-width: 100px; /* Küçültüldü: 120px -> 100px */
     }
@@ -1067,6 +1067,14 @@ body.show-frame {
 @media screen and (max-width: 480px) {
     .logo-image {
         max-width: 50px !important; /* Küçültüldü: 60px -> 50px */
+    }
+    
+    body.show-frame .logo-container .logo-image {
+        max-width: 50px !important;
+    }
+    
+    body.show-frame .logo-container {
+        top: 28% !important;
     }
     
     .couple-names {
