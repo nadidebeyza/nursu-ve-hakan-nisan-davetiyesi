@@ -193,8 +193,14 @@
     <div class="names-container">
         <h1 class="couple-names">Nursu & Hakan</h1>
         <p class="event-date">
-            <a href="https://share.google/S95nR7FDPxmbDPB29" target="_blank" class="event-location-link">Tekirdağ Yelken Spor Kulübü</a>
-            <span class="date-dot">•</span> 15 ŞUBAT 2026 <span class="date-dot">•</span> 18.00
+            <span class="event-line event-location-line">
+                <span class="date-dot">•</span>
+                <a href="https://share.google/S95nR7FDPxmbDPB29" target="_blank" class="event-location-link">Tekirdağ Yelken Spor Kulübü</a>
+                <span class="date-dot">•</span>
+            </span>
+            <span class="event-line event-date-time-line">
+                <span class="date-dot">•</span> 15.02.2026 <span class="date-dot">•</span> 18.00 <span class="date-dot">•</span>
+            </span>
         </p>
         <p class="invitation-message">Nişan törenimizde sizleri de aramızda görmekten mutluluk duyarız.</p>
         <div class="family-names-container">
@@ -788,6 +794,8 @@
                 // Mobile: use portrait frame
                 document.body.style.backgroundImage = `url('frame-portrait.png?v=${timestamp}')`;
                 document.body.style.backgroundSize = 'contain';
+                document.body.style.backgroundPosition = 'center center';
+                document.body.style.padding = '0';
                 console.log('✅ Portrait frame yüklendi');
             } else {
                 // Desktop/Tablet: use landscape frame
@@ -1132,6 +1140,8 @@
                 if (isMobile) {
                     document.body.style.backgroundImage = `url('frame-portrait.png?v=${timestamp}')`;
                     document.body.style.backgroundSize = 'contain';
+                    document.body.style.backgroundPosition = 'center center';
+                    document.body.style.padding = '0';
                 } else {
                     document.body.style.backgroundImage = `url('frame-landscape.png?v=${timestamp}')`;
                     if (window.innerWidth >= 769) {

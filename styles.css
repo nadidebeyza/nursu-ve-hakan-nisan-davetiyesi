@@ -378,10 +378,12 @@ body.show-frame {
     body.show-frame {
         background-image: url('frame-portrait.png');
         background-size: contain;
+        background-position: center center;
+        padding: 0;
     }
     
     body.show-frame .logo-container {
-        top: 30%;
+        top: 25%;
     }
     
     body.show-frame .names-container {
@@ -573,6 +575,12 @@ body.show-frame {
     display: inline-flex;
     align-items: center;
     vertical-align: middle;
+}
+
+.event-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
 }
 
 .event-location-link {
@@ -1064,6 +1072,20 @@ body.show-frame {
         margin-bottom: 8px;
         max-width: 95%;
         padding: 0 5px;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .event-line {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+        width: 100%;
+    }
+    
+    .event-date-time-line {
+        text-align: center;
     }
     
     .event-location {
@@ -1073,8 +1095,11 @@ body.show-frame {
     .action-buttons {
         gap: 6px;
         margin-top: 12px;
-        max-width: 95%;
-        padding: 0 5px;
+        width: calc(100% + 10px);
+        max-width: calc(100% + 10px);
+        padding: 0;
+        margin-left: -5px;
+        margin-right: -5px;
     }
     
     .rsvp-button,
@@ -1123,16 +1148,17 @@ body.show-frame {
     }
     
     .countdown-container {
-        gap: 5px;
+        gap: 4px;
         margin: 10px auto;
-        flex-wrap: wrap;
-        max-width: 95%;
-        padding: 0 5px;
+        flex-wrap: nowrap;
+        max-width: 100%;
+        padding: 0;
     }
     
     .countdown-item {
-        padding: 7px 4px;
-        min-width: 40px;
+        padding: 6px 3px;
+        min-width: 35px;
+        flex: 1;
         border-radius: 6px;
     }
     
