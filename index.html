@@ -486,27 +486,47 @@
             }
             
             // Auto-start music after player is ready (simulate user interaction)
-            // Try multiple times with delays to ensure it works
-            setTimeout(() => {
-                console.log('🎵 Otomatik müzik başlatma denemesi (1. deneme)...');
-                if (window.unmuteAndPlay && !musicUnmuted) {
-                    window.unmuteAndPlay();
-                }
-            }, 1500); // 1.5 seconds after player ready
+            // For GitHub Pages: More aggressive retry with longer delays
+            const tryAutoUnmute = (attempt, delay) => {
+                setTimeout(() => {
+                    console.log(`🎵 Otomatik müzik başlatma denemesi (${attempt}. deneme, ${delay}ms sonra)...`);
+                    
+                    // Check if player is actually playing
+                    if (youtubePlayer && typeof youtubePlayer.getPlayerState === 'function') {
+                        try {
+                            const state = youtubePlayer.getPlayerState();
+                            console.log('Player state:', state, '(PLAYING=1, PAUSED=2)');
+                            
+                            // Only try to unmute if player is playing or ready
+                            if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING || state === YT.PlayerState.CUED) {
+                                if (window.unmuteAndPlay && !musicUnmuted) {
+                                    window.unmuteAndPlay();
+                                }
+                            } else {
+                                console.log('Player henüz çalmıyor, tekrar denenecek...');
+                            }
+                        } catch (e) {
+                            console.log('Player state kontrol edilemedi:', e);
+                            // Fallback: try anyway
+                            if (window.unmuteAndPlay && !musicUnmuted) {
+                                window.unmuteAndPlay();
+                            }
+                        }
+                    } else {
+                        // Fallback if getPlayerState not available
+                        if (window.unmuteAndPlay && !musicUnmuted) {
+                            window.unmuteAndPlay();
+                        }
+                    }
+                }, delay);
+            };
             
-            setTimeout(() => {
-                console.log('🎵 Otomatik müzik başlatma denemesi (2. deneme)...');
-                if (window.unmuteAndPlay && !musicUnmuted) {
-                    window.unmuteAndPlay();
-                }
-            }, 3000); // 3 seconds after player ready
-            
-            setTimeout(() => {
-                console.log('🎵 Otomatik müzik başlatma denemesi (3. deneme)...');
-                if (window.unmuteAndPlay && !musicUnmuted) {
-                    window.unmuteAndPlay();
-                }
-            }, 5000); // 5 seconds after player ready
+            // Multiple attempts with increasing delays for GitHub Pages
+            tryAutoUnmute(1, 2000);  // 2 seconds
+            tryAutoUnmute(2, 4000);  // 4 seconds
+            tryAutoUnmute(3, 6000);  // 6 seconds
+            tryAutoUnmute(4, 8000);  // 8 seconds (GitHub Pages için ekstra)
+            tryAutoUnmute(5, 10000); // 10 seconds (GitHub Pages için ekstra)
         }
         
         function onPlayerStateChange(event) {
@@ -514,6 +534,16 @@
             // YT.PlayerState.PLAYING = 1, PAUSED = 2, ENDED = 0
             if (event.data === YT.PlayerState.PLAYING) {
                 console.log('▶️ Müzik çalıyor');
+                
+                // Auto-unmute when video starts playing (GitHub Pages fix)
+                if (!musicUnmuted && window.unmuteAndPlay) {
+                    console.log('🎵 Video çalıyor, otomatik ses açılıyor...');
+                    setTimeout(() => {
+                        if (!musicUnmuted && window.unmuteAndPlay) {
+                            window.unmuteAndPlay();
+                        }
+                    }, 500); // Small delay to ensure player is ready
+                }
             } else if (event.data === YT.PlayerState.PAUSED) {
                 console.log('⏸️ Video duraklatıldı');
                 // If paused, might need user interaction to resume
@@ -708,31 +738,42 @@
         }
         
         // Auto-start music function - simulates user interaction
+        // Enhanced for GitHub Pages compatibility
         function autoStartMusic() {
             console.log('🎵 Sayfa yüklendi, otomatik müzik başlatılıyor...');
+            console.log('Player hazır mı?', playerReady);
+            console.log('unmuteAndPlay fonksiyonu var mı?', typeof window.unmuteAndPlay);
             
-            // Try to auto-start music after page loads
-            // Multiple attempts with delays to ensure it works
-            setTimeout(() => {
-                if (window.unmuteAndPlay && !musicUnmuted) {
-                    console.log('🎵 Otomatik başlatma denemesi (sayfa yüklendi, 2 saniye sonra)...');
-                    window.unmuteAndPlay();
-                }
-            }, 2000);
+            // Wait for player to be ready first
+            const tryUnmuteWhenReady = (attempt, delay) => {
+                setTimeout(() => {
+                    console.log(`🎵 Otomatik başlatma denemesi (sayfa yüklendi, ${delay}ms sonra, deneme ${attempt})...`);
+                    console.log('Player ready:', playerReady, 'Music unmuted:', musicUnmuted);
+                    
+                    // Only try if player is ready
+                    if (playerReady && window.unmuteAndPlay && !musicUnmuted) {
+                        // Check if iframe exists
+                        const container = document.getElementById('youtube-music');
+                        const iframe = container ? container.querySelector('iframe') : null;
+                        
+                        if (iframe) {
+                            console.log('✅ iframe bulundu, unmute deneniyor...');
+                            window.unmuteAndPlay();
+                        } else {
+                            console.log('⏳ iframe henüz yok, bekleniyor...');
+                        }
+                    } else {
+                        console.log('⏳ Koşullar henüz hazır değil, bekleniyor...');
+                    }
+                }, delay);
+            };
             
-            setTimeout(() => {
-                if (window.unmuteAndPlay && !musicUnmuted) {
-                    console.log('🎵 Otomatik başlatma denemesi (sayfa yüklendi, 4 saniye sonra)...');
-                    window.unmuteAndPlay();
-                }
-            }, 4000);
-            
-            setTimeout(() => {
-                if (window.unmuteAndPlay && !musicUnmuted) {
-                    console.log('🎵 Otomatik başlatma denemesi (sayfa yüklendi, 6 saniye sonra)...');
-                    window.unmuteAndPlay();
-                }
-            }, 6000);
+            // Multiple attempts with longer delays for GitHub Pages
+            tryUnmuteWhenReady(1, 3000);  // 3 seconds
+            tryUnmuteWhenReady(2, 5000);  // 5 seconds
+            tryUnmuteWhenReady(3, 7000);  // 7 seconds
+            tryUnmuteWhenReady(4, 10000); // 10 seconds
+            tryUnmuteWhenReady(5, 15000); // 15 seconds (GitHub Pages için ekstra)
         }
         
         // Run on load
