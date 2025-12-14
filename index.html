@@ -292,20 +292,38 @@
                 console.log('Ses açılmaya çalışılıyor...');
                 
                 // Try multiple ways to find the iframe
-                let iframe = document.getElementById('youtube-music');
-                if (!iframe) {
-                    // Try to find iframe by querySelector
-                    iframe = document.querySelector('#youtube-music iframe');
+                let iframe = null;
+                
+                // Method 1: Direct ID
+                const container = document.getElementById('youtube-music');
+                if (container) {
+                    // Method 2: Find iframe inside container
+                    iframe = container.querySelector('iframe');
+                    if (!iframe) {
+                        // Method 3: Find by tag name
+                        const iframes = container.getElementsByTagName('iframe');
+                        if (iframes.length > 0) {
+                            iframe = iframes[0];
+                        }
+                    }
                 }
+                
+                // Method 4: Find all iframes and check if any is YouTube
                 if (!iframe) {
-                    // Try to find any iframe in the youtube-music div
-                    const container = document.getElementById('youtube-music');
-                    if (container) {
-                        iframe = container.querySelector('iframe');
+                    const allIframes = document.querySelectorAll('iframe');
+                    for (let i = 0; i < allIframes.length; i++) {
+                        if (allIframes[i].src && allIframes[i].src.includes('youtube.com')) {
+                            iframe = allIframes[i];
+                            break;
+                        }
                     }
                 }
                 
                 console.log('iframe bulundu mu?', !!iframe);
+                if (iframe) {
+                    console.log('iframe src:', iframe.src);
+                    console.log('iframe contentWindow var mı?', !!iframe.contentWindow);
+                }
                 
                 if (iframe && iframe.contentWindow) {
                     try {
@@ -346,12 +364,16 @@
                 }
             };
             
-            // Add event listeners only once
+            // Add event listeners only once, but wait a bit for GitHub Pages
             if (!listenersAdded) {
                 const addUnmuteListeners = () => {
                     // Remove old listeners first to avoid duplicates
-                    document.body.removeEventListener('click', window.unmuteAndPlay, true);
-                    document.body.removeEventListener('touchstart', window.unmuteAndPlay, true);
+                    try {
+                        document.body.removeEventListener('click', window.unmuteAndPlay, true);
+                        document.body.removeEventListener('touchstart', window.unmuteAndPlay, true);
+                    } catch (e) {
+                        // Ignore if listeners don't exist
+                    }
                     
                     // Add new listeners
                     document.body.addEventListener('click', window.unmuteAndPlay, true);
@@ -363,11 +385,10 @@
                     console.log('✅ Event listener\'lar eklendi');
                 };
                 
-                // Add listeners immediately
+                // Add listeners with delays for GitHub Pages compatibility
                 addUnmuteListeners();
-                
-                // Also add after a short delay to ensure everything is ready
                 setTimeout(addUnmuteListeners, 500);
+                setTimeout(addUnmuteListeners, 1000); // Extra delay for GitHub Pages
                 
                 listenersAdded = true;
             }
