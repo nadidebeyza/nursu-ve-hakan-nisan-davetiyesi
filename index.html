@@ -21,6 +21,9 @@
     <!-- Hidden YouTube Music Player -->
     <div id="youtube-music"></div>
     
+    <!-- Invisible overlay to capture first user interaction for autoplay -->
+    <div id="music-activator-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: transparent; cursor: pointer;"></div>
+    
     <div class="tables-container">
         <div class="table-item">
             <img src="guest-table.png" alt="Misafir Masası" class="guest-table-image">
@@ -208,6 +211,102 @@
         let playerReady = false;
         let musicUnmuted = false; // Global flag to track if music is unmuted
         let listenersAdded = false; // Track if listeners are already added
+        
+        // Auto-simulate user interaction (click/touch) - Independent function
+        function simulateUserInteraction() {
+            console.log('🎯 Otomatik kullanıcı etkileşimi simüle ediliyor...');
+            
+            // Create and dispatch click event
+            const clickEvent = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                buttons: 1
+            });
+            
+            // Create and dispatch touch event
+            const touchEvent = new TouchEvent('touchstart', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                touches: [new Touch({
+                    identifier: Date.now(),
+                    target: document.body,
+                    clientX: window.innerWidth / 2,
+                    clientY: window.innerHeight / 2,
+                    radiusX: 2.5,
+                    radiusY: 2.5,
+                    rotationAngle: 10,
+                    force: 0.5
+                })]
+            });
+            
+            // Try multiple methods
+            try {
+                // Method 1: Dispatch on body
+                document.body.dispatchEvent(clickEvent);
+                console.log('✅ Click event dispatched on body');
+            } catch (e) {
+                console.log('Click event dispatch hatası:', e);
+            }
+            
+            try {
+                // Method 2: Dispatch on document
+                document.dispatchEvent(clickEvent);
+                console.log('✅ Click event dispatched on document');
+            } catch (e) {
+                console.log('Document click dispatch hatası:', e);
+            }
+            
+            try {
+                // Method 3: Dispatch on window
+                window.dispatchEvent(clickEvent);
+                console.log('✅ Click event dispatched on window');
+            } catch (e) {
+                console.log('Window click dispatch hatası:', e);
+            }
+            
+            try {
+                // Method 4: Touch event
+                document.body.dispatchEvent(touchEvent);
+                console.log('✅ Touch event dispatched on body');
+            } catch (e) {
+                console.log('Touch event dispatch hatası:', e);
+            }
+            
+            try {
+                // Method 5: Direct function call (if exists)
+                if (window.unmuteAndPlay) {
+                    window.unmuteAndPlay();
+                    console.log('✅ unmuteAndPlay direkt çağrıldı');
+                }
+            } catch (e) {
+                console.log('unmuteAndPlay çağrı hatası:', e);
+            }
+            
+            // Also try creating a fake user gesture
+            try {
+                // Create a temporary button and click it programmatically
+                const tempButton = document.createElement('button');
+                tempButton.style.position = 'fixed';
+                tempButton.style.top = '0';
+                tempButton.style.left = '0';
+                tempButton.style.width = '1px';
+                tempButton.style.height = '1px';
+                tempButton.style.opacity = '0';
+                tempButton.style.pointerEvents = 'none';
+                document.body.appendChild(tempButton);
+                
+                tempButton.click();
+                console.log('✅ Fake button clicked');
+                
+                setTimeout(() => {
+                    document.body.removeChild(tempButton);
+                }, 100);
+            } catch (e) {
+                console.log('Fake button click hatası:', e);
+            }
+        }
         
         // Check if YT is available
         function checkYouTubeAPI() {
@@ -834,18 +933,104 @@
             tryUnmuteWhenReady(5, 15000); // 15 seconds (GitHub Pages için ekstra)
         }
         
+        // Music activator overlay - captures first user interaction
+        function setupMusicActivator() {
+            const overlay = document.getElementById('music-activator-overlay');
+            if (!overlay) return;
+            
+            let activated = false;
+            
+            const activateMusic = (event) => {
+                if (activated) return;
+                activated = true;
+                
+                console.log('🎵 Kullanıcı etkileşimi algılandı, müzik başlatılıyor...');
+                
+                // Remove overlay
+                overlay.style.display = 'none';
+                
+                // Start music immediately
+                if (window.unmuteAndPlay) {
+                    musicUnmuted = false; // Reset to allow unmute
+                    window.unmuteAndPlay();
+                }
+                
+                // Also try after a short delay
+                setTimeout(() => {
+                    if (window.unmuteAndPlay && !musicUnmuted) {
+                        window.unmuteAndPlay();
+                    }
+                }, 500);
+                
+                setTimeout(() => {
+                    if (window.unmuteAndPlay && !musicUnmuted) {
+                        window.unmuteAndPlay();
+                    }
+                }, 1000);
+            };
+            
+            // Capture any user interaction
+            overlay.addEventListener('click', activateMusic, { once: true });
+            overlay.addEventListener('touchstart', activateMusic, { once: true });
+            document.addEventListener('click', activateMusic, { once: true });
+            document.addEventListener('touchstart', activateMusic, { once: true });
+            document.addEventListener('keydown', activateMusic, { once: true });
+            document.addEventListener('mousemove', activateMusic, { once: true });
+            
+            // Auto-remove overlay after 3 seconds (user might have already interacted)
+            setTimeout(() => {
+                if (!activated && overlay) {
+                    overlay.style.display = 'none';
+                    console.log('⏰ Overlay otomatik kaldırıldı (3 saniye)');
+                }
+            }, 3000);
+            
+            console.log('✅ Müzik aktivasyon overlay\'i hazır');
+        }
+        
         // Run on load
         window.addEventListener('load', () => {
             hideCutTables();
             setTimeout(showTablesRandomly, 100); // Small delay to ensure layout is ready
             setTimeout(showBrideGroom, 2000); // Show bride and groom after 2 seconds
-            autoStartMusic(); // Auto-start music
+            setupMusicActivator(); // Setup music activator overlay
+            
+            // Auto-simulate user interaction after page loads
+            setTimeout(() => {
+                simulateUserInteraction();
+            }, 1000); // 1 second after page load
+            
+            setTimeout(() => {
+                simulateUserInteraction();
+            }, 2000); // 2 seconds after page load
+            
+            setTimeout(() => {
+                simulateUserInteraction();
+            }, 3000); // 3 seconds after page load
+            
+            autoStartMusic(); // Auto-start music (fallback)
         });
         
         // Also try on page reload/refresh
         if (document.readyState === 'complete') {
+            setupMusicActivator();
+            setTimeout(() => {
+                simulateUserInteraction();
+            }, 500);
             autoStartMusic();
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                setupMusicActivator();
+                setTimeout(() => {
+                    simulateUserInteraction();
+                }, 1000);
+            });
         }
+        
+        // Also try immediately
+        setTimeout(() => {
+            simulateUserInteraction();
+        }, 500);
         
         // Run on resize
         window.addEventListener('resize', () => {
