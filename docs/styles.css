@@ -380,7 +380,7 @@ body.show-frame {
         background-size: contain;
         background-position: 50% 65%;
         background-repeat: no-repeat;
-        padding: 0;
+        padding: 20px 0 0 0;
         margin: 0;
         height: 100vh;
         min-height: 100vh;
