@@ -341,11 +341,24 @@
             
             // Global function to unmute and play
             window.unmuteAndPlay = function() {
-                console.log('🖱️ Tıklama algılandı! unmuteAndPlay çağrıldı');
+                console.log('🖱️ unmuteAndPlay çağrıldı');
                 
+                // Check if already unmuted by checking volume (more reliable)
                 if (musicUnmuted) {
-                    console.log('Müzik zaten açık, tekrar açılmaya gerek yok');
-                    return; // Already unmuted, don't do anything
+                    try {
+                        if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
+                            const isMuted = youtubePlayer.isMuted();
+                            if (!isMuted) {
+                                console.log('Müzik zaten açık (isMuted kontrolü), tekrar açılmaya gerek yok');
+                                return;
+                            } else {
+                                console.log('Müzik hala sessiz, tekrar açılmaya çalışılıyor...');
+                                musicUnmuted = false; // Reset flag if still muted
+                            }
+                        }
+                    } catch (e) {
+                        console.log('isMuted kontrol edilemedi:', e);
+                    }
                 }
                 
                 console.log('Ses açılmaya çalışılıyor...');
@@ -445,8 +458,31 @@
                             });
                         }, 400);
                         
-                        musicUnmuted = true;
-                        console.log('🔊 Ses açıldı ve video oynatılıyor!');
+                        // Don't set musicUnmuted = true immediately
+                        // Instead, verify it worked after a delay
+                        setTimeout(() => {
+                            try {
+                                if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
+                                    const isMuted = youtubePlayer.isMuted();
+                                    if (!isMuted) {
+                                        musicUnmuted = true;
+                                        console.log('✅ Ses gerçekten açıldı! (isMuted kontrolü)');
+                                    } else {
+                                        console.log('⚠️ Ses hala kapalı, tekrar denenecek...');
+                                        musicUnmuted = false; // Keep trying
+                                    }
+                                } else {
+                                    // Fallback: assume it worked after 1 second
+                                    musicUnmuted = true;
+                                    console.log('🔊 Ses açıldı (fallback - isMuted kontrolü yapılamadı)');
+                                }
+                            } catch (e) {
+                                console.log('Ses kontrolü yapılamadı:', e);
+                                musicUnmuted = true; // Fallback
+                            }
+                        }, 1000); // Check after 1 second
+                        
+                        console.log('🔊 Ses açma komutları gönderildi, kontrol ediliyor...');
                     } catch (e) {
                         console.error('postMessage hatası:', e);
                     }
@@ -536,14 +572,36 @@
                 console.log('▶️ Müzik çalıyor');
                 
                 // Auto-unmute when video starts playing (GitHub Pages fix)
-                if (!musicUnmuted && window.unmuteAndPlay) {
-                    console.log('🎵 Video çalıyor, otomatik ses açılıyor...');
-                    setTimeout(() => {
+                // Check if actually muted before trying
+                setTimeout(() => {
+                    try {
+                        if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
+                            const isMuted = youtubePlayer.isMuted();
+                            console.log('Player isMuted kontrolü:', isMuted);
+                            
+                            if (isMuted && window.unmuteAndPlay) {
+                                console.log('🎵 Video çalıyor ama sessiz, otomatik ses açılıyor...');
+                                musicUnmuted = false; // Reset flag to allow retry
+                                window.unmuteAndPlay();
+                            } else if (!isMuted) {
+                                musicUnmuted = true;
+                                console.log('✅ Ses zaten açık!');
+                            }
+                        } else {
+                            // Fallback: try unmute anyway
+                            if (!musicUnmuted && window.unmuteAndPlay) {
+                                console.log('🎵 Video çalıyor, otomatik ses açılıyor (fallback)...');
+                                window.unmuteAndPlay();
+                            }
+                        }
+                    } catch (e) {
+                        console.log('isMuted kontrolü yapılamadı:', e);
+                        // Fallback: try unmute anyway
                         if (!musicUnmuted && window.unmuteAndPlay) {
                             window.unmuteAndPlay();
                         }
-                    }, 500); // Small delay to ensure player is ready
-                }
+                    }
+                }, 1000); // 1 second delay to ensure player is ready
             } else if (event.data === YT.PlayerState.PAUSED) {
                 console.log('⏸️ Video duraklatıldı');
                 // If paused, might need user interaction to resume
