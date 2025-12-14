@@ -393,6 +393,10 @@ body.show-frame {
         top: 28% !important;
     }
     
+    body.show-frame .logo-container .logo-image {
+        max-width: 50px !important;
+    }
+    
     body.show-frame .names-container {
         top: 50%;
         max-width: 95%;
