@@ -187,22 +187,21 @@
         <img src="bride-and-groom.png" alt="Gelin ve Damat" class="bride-groom-image">
     </div>
     <script>
-        // Immediate test - should appear first
-        console.log('🚀 SCRIPT BAŞLADI - GitHub Pages Test');
+        // CRITICAL: This must run immediately
+        console.log('🚀🚀🚀 SCRIPT TAG ÇALIŞTI - GitHub Pages Test 🚀🚀🚀');
+        window.testScriptLoaded = true;
         console.log('Sayfa URL:', window.location.href);
         console.log('Document ready state:', document.readyState);
+        console.log('Timestamp:', new Date().toISOString());
         
-        // Test if console works at all
-        try {
-            console.log('✅ Console çalışıyor');
-        } catch(e) {
-            alert('Console çalışmıyor!');
-        }
-        
-        // Test if script tag is executed
+        // Test if script tag is executed - make it very visible
         if (typeof window !== 'undefined') {
             window.testScriptLoaded = true;
             console.log('✅ Window object mevcut');
+            // Make it visible in page title too
+            if (document.title) {
+                document.title = '✅ Script Çalıştı - ' + document.title;
+            }
         }
         
         let youtubePlayer;
