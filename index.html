@@ -18,11 +18,13 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
+    <!-- Splash Screen / Cover Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <h1 class="splash-title">Nursu & Hakan</h1>
+    </div>
+    
     <!-- Hidden YouTube Music Player -->
     <div id="youtube-music"></div>
-    
-    <!-- Invisible overlay to capture first user interaction for autoplay -->
-    <div id="music-activator-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: transparent; cursor: pointer;"></div>
     
     <div class="tables-container">
         <div class="table-item">
@@ -211,102 +213,6 @@
         let playerReady = false;
         let musicUnmuted = false; // Global flag to track if music is unmuted
         let listenersAdded = false; // Track if listeners are already added
-        
-        // Auto-simulate user interaction (click/touch) - Independent function
-        function simulateUserInteraction() {
-            console.log('🎯 Otomatik kullanıcı etkileşimi simüle ediliyor...');
-            
-            // Create and dispatch click event
-            const clickEvent = new MouseEvent('click', {
-                view: window,
-                bubbles: true,
-                cancelable: true,
-                buttons: 1
-            });
-            
-            // Create and dispatch touch event
-            const touchEvent = new TouchEvent('touchstart', {
-                view: window,
-                bubbles: true,
-                cancelable: true,
-                touches: [new Touch({
-                    identifier: Date.now(),
-                    target: document.body,
-                    clientX: window.innerWidth / 2,
-                    clientY: window.innerHeight / 2,
-                    radiusX: 2.5,
-                    radiusY: 2.5,
-                    rotationAngle: 10,
-                    force: 0.5
-                })]
-            });
-            
-            // Try multiple methods
-            try {
-                // Method 1: Dispatch on body
-                document.body.dispatchEvent(clickEvent);
-                console.log('✅ Click event dispatched on body');
-            } catch (e) {
-                console.log('Click event dispatch hatası:', e);
-            }
-            
-            try {
-                // Method 2: Dispatch on document
-                document.dispatchEvent(clickEvent);
-                console.log('✅ Click event dispatched on document');
-            } catch (e) {
-                console.log('Document click dispatch hatası:', e);
-            }
-            
-            try {
-                // Method 3: Dispatch on window
-                window.dispatchEvent(clickEvent);
-                console.log('✅ Click event dispatched on window');
-            } catch (e) {
-                console.log('Window click dispatch hatası:', e);
-            }
-            
-            try {
-                // Method 4: Touch event
-                document.body.dispatchEvent(touchEvent);
-                console.log('✅ Touch event dispatched on body');
-            } catch (e) {
-                console.log('Touch event dispatch hatası:', e);
-            }
-            
-            try {
-                // Method 5: Direct function call (if exists)
-                if (window.unmuteAndPlay) {
-                    window.unmuteAndPlay();
-                    console.log('✅ unmuteAndPlay direkt çağrıldı');
-                }
-            } catch (e) {
-                console.log('unmuteAndPlay çağrı hatası:', e);
-            }
-            
-            // Also try creating a fake user gesture
-            try {
-                // Create a temporary button and click it programmatically
-                const tempButton = document.createElement('button');
-                tempButton.style.position = 'fixed';
-                tempButton.style.top = '0';
-                tempButton.style.left = '0';
-                tempButton.style.width = '1px';
-                tempButton.style.height = '1px';
-                tempButton.style.opacity = '0';
-                tempButton.style.pointerEvents = 'none';
-                document.body.appendChild(tempButton);
-                
-                tempButton.click();
-                console.log('✅ Fake button clicked');
-                
-                setTimeout(() => {
-                    document.body.removeChild(tempButton);
-                }, 100);
-            } catch (e) {
-                console.log('Fake button click hatası:', e);
-            }
-        }
         
         // Check if YT is available
         function checkYouTubeAPI() {
@@ -535,6 +441,7 @@
                         };
                         
                         // Send commands with proper format - try multiple origins
+                        // Don't include seekTo here - it's already called once before unmuteAndPlay
                         const commands = [
                             {event: 'command', func: 'unMute', args: ''},
                             {event: 'command', func: 'playVideo', args: ''},
@@ -666,60 +573,6 @@
                 
                 listenersAdded = true;
             }
-            
-            // Auto-start music after player is ready (simulate user interaction)
-            // For GitHub Pages: More aggressive retry with longer delays
-            const tryAutoUnmute = (attempt, delay) => {
-                setTimeout(() => {
-                    console.log(`🎵 Otomatik müzik başlatma denemesi (${attempt}. deneme, ${delay}ms sonra)...`);
-                    
-                    // Check if player is actually playing
-                    if (youtubePlayer && typeof youtubePlayer.getPlayerState === 'function') {
-                        try {
-                            const state = youtubePlayer.getPlayerState();
-                            console.log('Player state:', state, '(PLAYING=1, PAUSED=2)');
-                            
-                            // Try to start video if not playing
-                            if (state === YT.PlayerState.UNSTARTED || state === YT.PlayerState.ENDED) {
-                                console.log('Player UNSTARTED veya ENDED, video başlatılıyor...');
-                                try {
-                                    youtubePlayer.playVideo();
-                                    console.log('▶️ playVideo() çağrıldı (UNSTARTED/ENDED durumunda)');
-                                } catch (e) {
-                                    console.log('playVideo() hatası:', e);
-                                }
-                            }
-                            
-                            // Only try to unmute if player is playing or ready
-                            if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING || state === YT.PlayerState.CUED) {
-                                if (window.unmuteAndPlay && !musicUnmuted) {
-                                    window.unmuteAndPlay();
-                                }
-                            } else {
-                                console.log(`Player henüz çalmıyor (state=${state}), tekrar denenecek...`);
-                            }
-                        } catch (e) {
-                            console.log('Player state kontrol edilemedi:', e);
-                            // Fallback: try anyway
-                            if (window.unmuteAndPlay && !musicUnmuted) {
-                                window.unmuteAndPlay();
-                            }
-                        }
-                    } else {
-                        // Fallback if getPlayerState not available
-                        if (window.unmuteAndPlay && !musicUnmuted) {
-                            window.unmuteAndPlay();
-                        }
-                    }
-                }, delay);
-            };
-            
-            // Multiple attempts with increasing delays for GitHub Pages
-            tryAutoUnmute(1, 2000);  // 2 seconds
-            tryAutoUnmute(2, 4000);  // 4 seconds
-            tryAutoUnmute(3, 6000);  // 6 seconds
-            tryAutoUnmute(4, 8000);  // 8 seconds (GitHub Pages için ekstra)
-            tryAutoUnmute(5, 10000); // 10 seconds (GitHub Pages için ekstra)
         }
         
         function onPlayerStateChange(event) {
@@ -727,42 +580,8 @@
             // YT.PlayerState.PLAYING = 1, PAUSED = 2, ENDED = 0
             if (event.data === YT.PlayerState.PLAYING) {
                 console.log('▶️ Müzik çalıyor');
-                
-                // Auto-unmute when video starts playing (GitHub Pages fix)
-                // Check if actually muted before trying
-                setTimeout(() => {
-                    try {
-                        if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
-                            const isMuted = youtubePlayer.isMuted();
-                            console.log('Player isMuted kontrolü:', isMuted);
-                            
-                            if (isMuted && window.unmuteAndPlay) {
-                                console.log('🎵 Video çalıyor ama sessiz, otomatik ses açılıyor...');
-                                musicUnmuted = false; // Reset flag to allow retry
-                                window.unmuteAndPlay();
-                            } else if (!isMuted) {
-                                musicUnmuted = true;
-                                console.log('✅ Ses zaten açık!');
-                            }
-                        } else {
-                            // Fallback: try unmute anyway
-                            if (!musicUnmuted && window.unmuteAndPlay) {
-                                console.log('🎵 Video çalıyor, otomatik ses açılıyor (fallback)...');
-                                window.unmuteAndPlay();
-                            }
-                        }
-                    } catch (e) {
-                        console.log('isMuted kontrolü yapılamadı:', e);
-                        // Fallback: try unmute anyway
-                        if (!musicUnmuted && window.unmuteAndPlay) {
-                            window.unmuteAndPlay();
-                        }
-                    }
-                }, 1000); // 1 second delay to ensure player is ready
             } else if (event.data === YT.PlayerState.PAUSED) {
                 console.log('⏸️ Video duraklatıldı');
-                // If paused, might need user interaction to resume
-                console.log('Video duraklatıldı, kullanıcı etkileşimi bekleniyor...');
             } else if (event.data === YT.PlayerState.ENDED) {
                 console.log('⏹️ Video bitti');
             }
@@ -952,143 +771,76 @@
             }
         }
         
-        // Auto-start music function - simulates user interaction
-        // Enhanced for GitHub Pages compatibility
-        function autoStartMusic() {
-            console.log('🎵 Sayfa yüklendi, otomatik müzik başlatılıyor...');
-            console.log('Player hazır mı?', playerReady);
-            console.log('unmuteAndPlay fonksiyonu var mı?', typeof window.unmuteAndPlay);
+        // Splash screen handler
+        function initSplashScreen() {
+            const splashScreen = document.getElementById('splash-screen');
+            if (!splashScreen) return;
             
-            // Wait for player to be ready first
-            const tryUnmuteWhenReady = (attempt, delay) => {
+            let contentStarted = false;
+            
+            const startContent = () => {
+                if (contentStarted) return;
+                contentStarted = true;
+                
+                console.log('🎬 Kapak ekranı tıklandı, içerik başlatılıyor...');
+                
+                // Hide splash screen
+                splashScreen.classList.add('hidden');
+                
+                // Remove splash screen from DOM after animation
                 setTimeout(() => {
-                    console.log(`🎵 Otomatik başlatma denemesi (sayfa yüklendi, ${delay}ms sonra, deneme ${attempt})...`);
-                    console.log('Player ready:', playerReady, 'Music unmuted:', musicUnmuted);
-                    
-                    // Only try if player is ready
-                    if (playerReady && window.unmuteAndPlay && !musicUnmuted) {
-                        // Check if iframe exists
-                        const container = document.getElementById('youtube-music');
-                        const iframe = container ? container.querySelector('iframe') : null;
-                        
-                        if (iframe) {
-                            console.log('✅ iframe bulundu, unmute deneniyor...');
-                            window.unmuteAndPlay();
-                        } else {
-                            console.log('⏳ iframe henüz yok, bekleniyor...');
-                        }
-                    } else {
-                        console.log('⏳ Koşullar henüz hazır değil, bekleniyor...');
-                    }
-                }, delay);
-            };
-            
-            // Multiple attempts with longer delays for GitHub Pages
-            tryUnmuteWhenReady(1, 3000);  // 3 seconds
-            tryUnmuteWhenReady(2, 5000);  // 5 seconds
-            tryUnmuteWhenReady(3, 7000);  // 7 seconds
-            tryUnmuteWhenReady(4, 10000); // 10 seconds
-            tryUnmuteWhenReady(5, 15000); // 15 seconds (GitHub Pages için ekstra)
-        }
-        
-        // Music activator overlay - captures first user interaction
-        function setupMusicActivator() {
-            const overlay = document.getElementById('music-activator-overlay');
-            if (!overlay) return;
-            
-            let activated = false;
-            
-            const activateMusic = (event) => {
-                if (activated) return;
-                activated = true;
-                
-                console.log('🎵 Kullanıcı etkileşimi algılandı, müzik başlatılıyor...');
-                
-                // Remove overlay
-                overlay.style.display = 'none';
-                
-                // Start music immediately
-                if (window.unmuteAndPlay) {
-                    musicUnmuted = false; // Reset to allow unmute
-                    window.unmuteAndPlay();
-                }
-                
-                // Also try after a short delay
-                setTimeout(() => {
-                    if (window.unmuteAndPlay && !musicUnmuted) {
-                        window.unmuteAndPlay();
+                    if (splashScreen.parentNode) {
+                        splashScreen.parentNode.removeChild(splashScreen);
                     }
                 }, 500);
                 
+                // Start main content
+                hideCutTables();
+                setTimeout(showTablesRandomly, 100); // Small delay to ensure layout is ready
+                setTimeout(showBrideGroom, 2000); // Show bride and groom after 2 seconds
+                
+                // Start music from beginning with user interaction - only once
+                if (youtubePlayer && typeof youtubePlayer.seekTo === 'function') {
+                    try {
+                        // Reset video to beginning - only once, before unmuting
+                        youtubePlayer.seekTo(0, true);
+                        console.log('⏮️ Video başa alındı (seekTo 0)');
+                    } catch (e) {
+                        console.log('seekTo hatası:', e);
+                    }
+                }
+                
+                // Small delay to ensure seekTo completes before unmuting
                 setTimeout(() => {
-                    if (window.unmuteAndPlay && !musicUnmuted) {
+                    // Start music with user interaction
+                    if (window.unmuteAndPlay) {
+                        musicUnmuted = false; // Reset to allow unmute
                         window.unmuteAndPlay();
                     }
-                }, 1000);
+                }, 100);
             };
             
-            // Capture any user interaction
-            overlay.addEventListener('click', activateMusic, { once: true });
-            overlay.addEventListener('touchstart', activateMusic, { once: true });
-            document.addEventListener('click', activateMusic, { once: true });
-            document.addEventListener('touchstart', activateMusic, { once: true });
-            document.addEventListener('keydown', activateMusic, { once: true });
-            document.addEventListener('mousemove', activateMusic, { once: true });
+            // Add click/touch listeners
+            splashScreen.addEventListener('click', startContent, { once: true });
+            splashScreen.addEventListener('touchstart', startContent, { once: true });
             
-            // Auto-remove overlay after 3 seconds (user might have already interacted)
-            setTimeout(() => {
-                if (!activated && overlay) {
-                    overlay.style.display = 'none';
-                    console.log('⏰ Overlay otomatik kaldırıldı (3 saniye)');
-                }
-            }, 3000);
-            
-            console.log('✅ Müzik aktivasyon overlay\'i hazır');
+            console.log('✅ Kapak ekranı hazır');
         }
         
         // Run on load
         window.addEventListener('load', () => {
-            hideCutTables();
-            setTimeout(showTablesRandomly, 100); // Small delay to ensure layout is ready
-            setTimeout(showBrideGroom, 2000); // Show bride and groom after 2 seconds
-            setupMusicActivator(); // Setup music activator overlay
-            
-            // Auto-simulate user interaction after page loads
-            setTimeout(() => {
-                simulateUserInteraction();
-            }, 1000); // 1 second after page load
-            
-            setTimeout(() => {
-                simulateUserInteraction();
-            }, 2000); // 2 seconds after page load
-            
-            setTimeout(() => {
-                simulateUserInteraction();
-            }, 3000); // 3 seconds after page load
-            
-            autoStartMusic(); // Auto-start music (fallback)
+            // Initialize splash screen first
+            initSplashScreen();
         });
         
         // Also try on page reload/refresh
         if (document.readyState === 'complete') {
-            setupMusicActivator();
-            setTimeout(() => {
-                simulateUserInteraction();
-            }, 500);
-            autoStartMusic();
+            initSplashScreen();
         } else {
             document.addEventListener('DOMContentLoaded', () => {
-                setupMusicActivator();
-                setTimeout(() => {
-                    simulateUserInteraction();
-                }, 1000);
+                initSplashScreen();
             });
         }
-        
-        // Also try immediately
-        setTimeout(() => {
-            simulateUserInteraction();
-        }, 500);
         
         // Run on resize
         window.addEventListener('resize', () => {

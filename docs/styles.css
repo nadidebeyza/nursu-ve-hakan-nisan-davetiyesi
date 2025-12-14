@@ -5,6 +5,61 @@
     box-sizing: border-box;
 }
 
+/* Splash Screen / Cover Screen */
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #ffebec;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    cursor: pointer;
+    transition: opacity 0.5s ease-out;
+}
+
+.splash-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.splash-title {
+    font-family: 'Monsieur La Doulaise', cursive;
+    font-size: 4rem;
+    color: #c60000;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 1s ease-in;
+    user-select: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive splash screen */
+@media screen and (max-width: 768px) {
+    .splash-title {
+        font-size: 3rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .splash-title {
+        font-size: 2.5rem;
+    }
+}
+
 /* Hidden YouTube Music Player */
 #youtube-music {
     position: absolute;
