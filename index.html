@@ -187,7 +187,24 @@
         <img src="bride-and-groom.png" alt="Gelin ve Damat" class="bride-groom-image">
     </div>
     <script>
-        console.log('Script yüklendi');
+        // Immediate test - should appear first
+        console.log('🚀 SCRIPT BAŞLADI - GitHub Pages Test');
+        console.log('Sayfa URL:', window.location.href);
+        console.log('Document ready state:', document.readyState);
+        
+        // Test if console works at all
+        try {
+            console.log('✅ Console çalışıyor');
+        } catch(e) {
+            alert('Console çalışmıyor!');
+        }
+        
+        // Test if script tag is executed
+        if (typeof window !== 'undefined') {
+            window.testScriptLoaded = true;
+            console.log('✅ Window object mevcut');
+        }
+        
         let youtubePlayer;
         let playerReady = false;
         let musicUnmuted = false; // Global flag to track if music is unmuted
@@ -245,16 +262,31 @@
         
         // Start checking for API when page loads
         window.addEventListener('load', () => {
-            console.log('Sayfa yüklendi, API kontrolü başlatılıyor');
+            console.log('📄 Sayfa yüklendi (load event), API kontrolü başlatılıyor');
             checkYouTubeAPI();
         });
         
         // Also check immediately
+        console.log('🔍 İlk API kontrolü yapılıyor...');
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', checkYouTubeAPI);
+            console.log('Document loading, DOMContentLoaded bekleniyor...');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('📄 DOMContentLoaded event tetiklendi');
+                checkYouTubeAPI();
+            });
         } else {
+            console.log('Document zaten hazır, hemen kontrol ediliyor');
             checkYouTubeAPI();
         }
+        
+        // Extra safety check after a delay
+        setTimeout(() => {
+            console.log('⏰ 2 saniye sonra kontrol...');
+            if (!playerReady) {
+                console.log('Player henüz hazır değil, tekrar kontrol ediliyor...');
+                checkYouTubeAPI();
+            }
+        }, 2000);
         
         function onPlayerReady(event) {
             console.log('✅ Player hazır!');
