@@ -378,8 +378,15 @@ body.show-frame {
     body.show-frame {
         background-image: url('frame-portrait.png');
         background-size: contain;
-        background-position: center center;
+        background-position: 50% 50%;
+        background-repeat: no-repeat;
         padding: 0;
+        margin: 0;
+        height: 100vh;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     body.show-frame .logo-container {
@@ -455,6 +462,11 @@ body.show-frame {
 
     .guest-table-image {
         max-width: 100px;
+    }
+    
+    /* Hide dots around location on mobile */
+    .event-location-line .date-dot {
+        display: none;
     }
 }
 

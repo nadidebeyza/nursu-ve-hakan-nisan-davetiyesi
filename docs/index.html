@@ -404,6 +404,8 @@
             });
         }
         
+        let tablesPositioned = false; // Flag to track if tables are positioned
+        
         function showTablesRandomly() {
             const tables = Array.from(document.querySelectorAll('.table-item'));
             // Filter only visible tables (not cut off)
@@ -428,6 +430,16 @@
                     table.style.opacity = '1';
                 }, index * 50); // 50ms delay between each table
             });
+            
+            // For mobile: mark tables as positioned after they're all visible
+            const isMobile = window.innerWidth <= 480;
+            if (isMobile && !tablesPositioned) {
+                // Wait for all tables to be visible, then mark as positioned
+                const totalDelay = visibleTables.length * 50 + 200; // Wait for all animations + buffer
+                setTimeout(() => {
+                    tablesPositioned = true;
+                }, totalDelay);
+            }
         }
         
         /**
@@ -617,8 +629,17 @@
                     });
                     
                     // Remove the overlapping table
-                    table.style.opacity = '0';
-                    table.style.display = 'none';
+                    // For mobile, use visibility: hidden to keep grid position
+                    const isMobile = window.innerWidth <= 480;
+                    if (isMobile && tablesPositioned) {
+                        // Keep grid position, just hide visually
+                        table.style.opacity = '0';
+                        table.style.visibility = 'hidden';
+                        table.style.pointerEvents = 'none';
+                    } else {
+                        table.style.opacity = '0';
+                        table.style.display = 'none';
+                    }
                     removedCount++;
                 }
             });
@@ -626,9 +647,18 @@
             console.log(`✅ ${checkedCount} masa kontrol edildi, ${removedCount} çakışan masa kaldırıldı`);
         }
         
+        let brideGroomShown = false; // Flag to prevent multiple calls
+        
         function showBrideGroom() {
+            // Prevent multiple calls
+            if (brideGroomShown) {
+                console.log('⚠️ Gelin ve damat zaten gösterildi, tekrar gösterilmiyor');
+                return;
+            }
+            
             const brideGroom = document.querySelector('.bride-groom-container');
             if (brideGroom) {
+                brideGroomShown = true;
                 brideGroom.style.opacity = '1';
                 
                 // Wait a bit for the image to render and get accurate coordinates
@@ -649,8 +679,25 @@
         }
         
         let firstFlowerLanded = false;
+        let flowerRainStarted = false; // Flag to prevent multiple flower rain instances
         
         function startFlowerRain() {
+            // Prevent multiple flower rain instances
+            if (flowerRainStarted) {
+                console.log('⚠️ Çiçek yağmuru zaten başladı, tekrar başlatılmıyor');
+                return;
+            }
+            
+            // Check if there's already a flower container
+            const existingContainer = document.querySelector('.flower-container');
+            if (existingContainer) {
+                console.log('⚠️ Çiçek container zaten var, yeni oluşturulmuyor');
+                return;
+            }
+            
+            flowerRainStarted = true;
+            console.log('🌸 Çiçek yağmuru başlatılıyor...');
+            
             const flowerContainer = document.createElement('div');
             flowerContainer.className = 'flower-container';
             document.body.appendChild(flowerContainer);
@@ -685,6 +732,8 @@
                     if (flowerContainer.parentNode) {
                         flowerContainer.parentNode.removeChild(flowerContainer);
                     }
+                    // Reset flag after container is removed (for potential future use)
+                    // flowerRainStarted = false; // Uncomment if you want to allow restart
                 }, 1000);
             }, totalTime);
         }
@@ -775,9 +824,18 @@
             
             // Hide all guest table images completely
             const allTables = document.querySelectorAll('.table-item');
+            // Check both width and orientation for better mobile detection
+            const isMobile = window.innerWidth <= 480 || (window.innerWidth <= 768 && window.matchMedia('(orientation: portrait)').matches);
+            
             allTables.forEach(table => {
                 table.style.opacity = '0';
-                table.style.display = 'none';
+                // For mobile, use visibility: hidden to keep grid position
+                if (isMobile && tablesPositioned) {
+                    table.style.visibility = 'hidden';
+                    table.style.pointerEvents = 'none';
+                } else {
+                    table.style.display = 'none';
+                }
             });
             
             // Show frame background when tables disappear
@@ -785,8 +843,6 @@
             
             // Force reload frame images with cache-busting timestamp
             const timestamp = new Date().getTime();
-            // Check both width and orientation for better mobile detection
-            const isMobile = window.innerWidth <= 480 || (window.innerWidth <= 768 && window.matchMedia('(orientation: portrait)').matches);
             
             console.log('Frame gösteriliyor - Genişlik:', window.innerWidth, 'Mobil:', isMobile);
             
@@ -794,8 +850,15 @@
                 // Mobile: use portrait frame
                 document.body.style.backgroundImage = `url('frame-portrait.png?v=${timestamp}')`;
                 document.body.style.backgroundSize = 'contain';
-                document.body.style.backgroundPosition = 'center center';
+                document.body.style.backgroundPosition = '50% 50%';
+                document.body.style.backgroundRepeat = 'no-repeat';
                 document.body.style.padding = '0';
+                document.body.style.margin = '0';
+                document.body.style.height = '100vh';
+                document.body.style.minHeight = '100vh';
+                document.body.style.display = 'flex';
+                document.body.style.alignItems = 'center';
+                document.body.style.justifyContent = 'center';
                 console.log('✅ Portrait frame yüklendi');
             } else {
                 // Desktop/Tablet: use landscape frame
@@ -1124,6 +1187,17 @@
         
         // Run on resize
         window.addEventListener('resize', () => {
+            const isMobile = window.innerWidth <= 480;
+            // Reset positioning flag on resize if switching to/from mobile
+            if (!isMobile) {
+                tablesPositioned = false;
+                // Reset visibility for desktop/tablet
+                document.querySelectorAll('.table-item').forEach(table => {
+                    table.style.visibility = '';
+                    table.style.pointerEvents = '';
+                });
+            }
+            
             // Reset all tables to invisible first
             document.querySelectorAll('.table-item').forEach(table => {
                 table.style.opacity = '0';
@@ -1140,8 +1214,15 @@
                 if (isMobile) {
                     document.body.style.backgroundImage = `url('frame-portrait.png?v=${timestamp}')`;
                     document.body.style.backgroundSize = 'contain';
-                    document.body.style.backgroundPosition = 'center center';
+                    document.body.style.backgroundPosition = '50% 50%';
+                    document.body.style.backgroundRepeat = 'no-repeat';
                     document.body.style.padding = '0';
+                    document.body.style.margin = '0';
+                    document.body.style.height = '100vh';
+                    document.body.style.minHeight = '100vh';
+                    document.body.style.display = 'flex';
+                    document.body.style.alignItems = 'center';
+                    document.body.style.justifyContent = 'center';
                 } else {
                     document.body.style.backgroundImage = `url('frame-landscape.png?v=${timestamp}')`;
                     if (window.innerWidth >= 769) {
