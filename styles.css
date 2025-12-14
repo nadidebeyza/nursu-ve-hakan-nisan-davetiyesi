@@ -378,7 +378,7 @@ body.show-frame {
     body.show-frame {
         background-image: url('frame-portrait.png');
         background-size: contain;
-        background-position: 50% 60%;
+        background-position: 50% 65%;
         background-repeat: no-repeat;
         padding: 0;
         margin: 0;
