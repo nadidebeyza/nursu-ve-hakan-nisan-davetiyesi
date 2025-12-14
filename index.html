@@ -190,6 +190,8 @@
         console.log('Script yüklendi');
         let youtubePlayer;
         let playerReady = false;
+        let musicUnmuted = false; // Global flag to track if music is unmuted
+        let listenersAdded = false; // Track if listeners are already added
         
         // Check if YT is available
         function checkYouTubeAPI() {
@@ -280,48 +282,95 @@
             
             // Global function to unmute and play
             window.unmuteAndPlay = function() {
+                console.log('🖱️ Tıklama algılandı! unmuteAndPlay çağrıldı');
+                
+                if (musicUnmuted) {
+                    console.log('Müzik zaten açık, tekrar açılmaya gerek yok');
+                    return; // Already unmuted, don't do anything
+                }
+                
                 console.log('Ses açılmaya çalışılıyor...');
                 
-                // Use postMessage directly to iframe (most reliable method)
-                const iframe = document.getElementById('youtube-music');
-                if (iframe && iframe.contentWindow) {
-                    // Send unMute command
-                    iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
-                    console.log('✅ postMessage ile unMute gönderildi');
-                    
-                    // Send playVideo command
-                    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-                    console.log('✅ postMessage ile playVideo gönderildi');
-                    
-                    // Also try setVolume to 100
-                    iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
-                    console.log('✅ postMessage ile setVolume(100) gönderildi');
-                } else {
-                    console.error('iframe bulunamadı');
+                // Try multiple ways to find the iframe
+                let iframe = document.getElementById('youtube-music');
+                if (!iframe) {
+                    // Try to find iframe by querySelector
+                    iframe = document.querySelector('#youtube-music iframe');
+                }
+                if (!iframe) {
+                    // Try to find any iframe in the youtube-music div
+                    const container = document.getElementById('youtube-music');
+                    if (container) {
+                        iframe = container.querySelector('iframe');
+                    }
                 }
                 
-                console.log('🔊 Ses açıldı ve video oynatılıyor!');
-                // Remove event listeners after successful unmute
-                document.removeEventListener('click', window.unmuteAndPlay);
-                document.removeEventListener('touchstart', window.unmuteAndPlay);
-                document.removeEventListener('keydown', window.unmuteAndPlay);
+                console.log('iframe bulundu mu?', !!iframe);
+                
+                if (iframe && iframe.contentWindow) {
+                    try {
+                        // YouTube always uses HTTPS, so always use https://www.youtube.com
+                        const origin = 'https://www.youtube.com';
+                        
+                        console.log('postMessage gönderiliyor, origin:', origin);
+                        
+                        // Send commands with proper format
+                        const commands = [
+                            {event: 'command', func: 'unMute', args: ''},
+                            {event: 'command', func: 'playVideo', args: ''},
+                            {event: 'command', func: 'setVolume', args: [100]}
+                        ];
+                        
+                        commands.forEach((cmd, index) => {
+                            setTimeout(() => {
+                                iframe.contentWindow.postMessage(JSON.stringify(cmd), origin);
+                                console.log(`✅ postMessage gönderildi (${index + 1}/3):`, cmd.func);
+                            }, index * 100); // 100ms delay between each command
+                        });
+                        
+                        // Also try with * origin as fallback
+                        setTimeout(() => {
+                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'unMute', args: ''}), '*');
+                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'setVolume', args: [100]}), '*');
+                            console.log('✅ postMessage (* origin) gönderildi');
+                        }, 400);
+                        
+                        musicUnmuted = true;
+                        console.log('🔊 Ses açıldı ve video oynatılıyor!');
+                    } catch (e) {
+                        console.error('postMessage hatası:', e);
+                    }
+                } else {
+                    console.error('❌ iframe bulunamadı veya contentWindow yok');
+                    console.log('Tüm iframe\'ler:', document.querySelectorAll('iframe'));
+                }
             };
             
-            // Try to unmute on any user interaction (multiple events)
-            document.addEventListener('click', window.unmuteAndPlay, { once: true });
-            document.addEventListener('touchstart', window.unmuteAndPlay, { once: true });
-            document.addEventListener('keydown', window.unmuteAndPlay, { once: true });
-            
-            // Also try on mouse move (some browsers accept this)
-            let mouseMoveTried = false;
-            document.addEventListener('mousemove', function() {
-                if (!mouseMoveTried) {
-                    mouseMoveTried = true;
-                    setTimeout(() => {
-                        window.unmuteAndPlay();
-                    }, 100);
-                }
-            }, { once: true });
+            // Add event listeners only once
+            if (!listenersAdded) {
+                const addUnmuteListeners = () => {
+                    // Remove old listeners first to avoid duplicates
+                    document.body.removeEventListener('click', window.unmuteAndPlay, true);
+                    document.body.removeEventListener('touchstart', window.unmuteAndPlay, true);
+                    
+                    // Add new listeners
+                    document.body.addEventListener('click', window.unmuteAndPlay, true);
+                    document.body.addEventListener('touchstart', window.unmuteAndPlay, true);
+                    document.addEventListener('click', window.unmuteAndPlay, true);
+                    document.addEventListener('touchstart', window.unmuteAndPlay, true);
+                    document.addEventListener('keydown', window.unmuteAndPlay, true);
+                    window.addEventListener('click', window.unmuteAndPlay, true);
+                    console.log('✅ Event listener\'lar eklendi');
+                };
+                
+                // Add listeners immediately
+                addUnmuteListeners();
+                
+                // Also add after a short delay to ensure everything is ready
+                setTimeout(addUnmuteListeners, 500);
+                
+                listenersAdded = true;
+            }
         }
         
         function onPlayerStateChange(event) {
