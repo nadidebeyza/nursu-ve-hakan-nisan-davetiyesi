@@ -215,14 +215,20 @@
             if (typeof YT !== 'undefined' && YT.Player) {
                 console.log('YouTube API bulundu!');
                 initYouTubePlayer();
+                return true;
             } else {
                 console.log('YouTube API henüz yüklenmedi, bekleniyor...');
-                setTimeout(checkYouTubeAPI, 100);
+                return false;
             }
         }
         
         // Initialize YouTube Player
         function initYouTubePlayer() {
+            if (playerReady) {
+                console.log('Player zaten hazır, tekrar başlatılmıyor');
+                return;
+            }
+            
             console.log('Player başlatılıyor...');
             try {
                 youtubePlayer = new YT.Player('youtube-music', {
@@ -237,7 +243,8 @@
                         'showinfo': 0,
                         'modestbranding': 1,
                         'mute': 1,
-                        'enablejsapi': 1
+                        'enablejsapi': 1,
+                        'origin': window.location.origin || '*'
                     },
                     events: {
                         'onReady': onPlayerReady,
@@ -253,16 +260,37 @@
         
         // YouTube IFrame API callback (backup)
         window.onYouTubeIframeAPIReady = function() {
-            console.log('onYouTubeIframeAPIReady çağrıldı');
+            console.log('✅ onYouTubeIframeAPIReady çağrıldı');
             if (!playerReady) {
                 initYouTubePlayer();
             }
         };
         
+        // Multiple initialization strategies for GitHub Pages
+        function initializeYouTubePlayer() {
+            // Strategy 1: Check if API is already loaded
+            if (checkYouTubeAPI()) {
+                return;
+            }
+            
+            // Strategy 2: Wait for API to load
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds max
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (checkYouTubeAPI()) {
+                    clearInterval(checkInterval);
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    console.error('❌ YouTube API yüklenemedi (max attempts reached)');
+                }
+            }, 100);
+        }
+        
         // Start checking for API when page loads
         window.addEventListener('load', () => {
             console.log('📄 Sayfa yüklendi (load event), API kontrolü başlatılıyor');
-            checkYouTubeAPI();
+            initializeYouTubePlayer();
         });
         
         // Also check immediately
@@ -271,11 +299,11 @@
             console.log('Document loading, DOMContentLoaded bekleniyor...');
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOMContentLoaded event tetiklendi');
-                checkYouTubeAPI();
+                initializeYouTubePlayer();
             });
         } else {
             console.log('Document zaten hazır, hemen kontrol ediliyor');
-            checkYouTubeAPI();
+            initializeYouTubePlayer();
         }
         
         // Extra safety check after a delay
@@ -283,7 +311,7 @@
             console.log('⏰ 2 saniye sonra kontrol...');
             if (!playerReady) {
                 console.log('Player henüz hazır değil, tekrar kontrol ediliyor...');
-                checkYouTubeAPI();
+                initializeYouTubePlayer();
             }
         }, 2000);
         
@@ -358,30 +386,63 @@
                 
                 if (iframe && iframe.contentWindow) {
                     try {
-                        // YouTube always uses HTTPS, so always use https://www.youtube.com
-                        const origin = 'https://www.youtube.com';
+                        // Extract origin from iframe src dynamically
+                        let origin = 'https://www.youtube.com'; // Default
+                        if (iframe.src) {
+                            try {
+                                const url = new URL(iframe.src);
+                                origin = url.origin;
+                                console.log('Origin iframe src\'den çıkarıldı:', origin);
+                            } catch (e) {
+                                console.log('Origin çıkarılamadı, varsayılan kullanılıyor:', origin);
+                            }
+                        }
                         
                         console.log('postMessage gönderiliyor, origin:', origin);
                         
-                        // Send commands with proper format
+                        // Function to send command
+                        const sendCommand = (cmd, targetOrigin) => {
+                            try {
+                                iframe.contentWindow.postMessage(JSON.stringify(cmd), targetOrigin);
+                                console.log(`✅ postMessage gönderildi (${targetOrigin}):`, cmd.func);
+                                return true;
+                            } catch (e) {
+                                console.warn(`⚠️ postMessage hatası (${targetOrigin}):`, e);
+                                return false;
+                            }
+                        };
+                        
+                        // Send commands with proper format - try multiple origins
                         const commands = [
                             {event: 'command', func: 'unMute', args: ''},
                             {event: 'command', func: 'playVideo', args: ''},
                             {event: 'command', func: 'setVolume', args: [100]}
                         ];
                         
+                        // Try with extracted origin first
                         commands.forEach((cmd, index) => {
                             setTimeout(() => {
-                                iframe.contentWindow.postMessage(JSON.stringify(cmd), origin);
-                                console.log(`✅ postMessage gönderildi (${index + 1}/3):`, cmd.func);
-                            }, index * 100); // 100ms delay between each command
+                                sendCommand(cmd, origin);
+                            }, index * 50);
                         });
                         
-                        // Also try with * origin as fallback
+                        // Also try with wildcard origin as fallback
                         setTimeout(() => {
-                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'unMute', args: ''}), '*');
-                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'setVolume', args: [100]}), '*');
-                            console.log('✅ postMessage (* origin) gönderildi');
+                            commands.forEach((cmd, index) => {
+                                setTimeout(() => {
+                                    sendCommand(cmd, '*');
+                                }, index * 50);
+                            });
+                        }, 200);
+                        
+                        // Try with explicit YouTube origins
+                        setTimeout(() => {
+                            commands.forEach((cmd, index) => {
+                                setTimeout(() => {
+                                    sendCommand(cmd, 'https://www.youtube.com');
+                                    sendCommand(cmd, 'https://youtube.com');
+                                }, index * 50);
+                            });
                         }, 400);
                         
                         musicUnmuted = true;
