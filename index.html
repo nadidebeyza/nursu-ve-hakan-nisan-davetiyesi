@@ -484,6 +484,29 @@
                 
                 listenersAdded = true;
             }
+            
+            // Auto-start music after player is ready (simulate user interaction)
+            // Try multiple times with delays to ensure it works
+            setTimeout(() => {
+                console.log('🎵 Otomatik müzik başlatma denemesi (1. deneme)...');
+                if (window.unmuteAndPlay && !musicUnmuted) {
+                    window.unmuteAndPlay();
+                }
+            }, 1500); // 1.5 seconds after player ready
+            
+            setTimeout(() => {
+                console.log('🎵 Otomatik müzik başlatma denemesi (2. deneme)...');
+                if (window.unmuteAndPlay && !musicUnmuted) {
+                    window.unmuteAndPlay();
+                }
+            }, 3000); // 3 seconds after player ready
+            
+            setTimeout(() => {
+                console.log('🎵 Otomatik müzik başlatma denemesi (3. deneme)...');
+                if (window.unmuteAndPlay && !musicUnmuted) {
+                    window.unmuteAndPlay();
+                }
+            }, 5000); // 5 seconds after player ready
         }
         
         function onPlayerStateChange(event) {
@@ -684,12 +707,46 @@
             }
         }
         
+        // Auto-start music function - simulates user interaction
+        function autoStartMusic() {
+            console.log('🎵 Sayfa yüklendi, otomatik müzik başlatılıyor...');
+            
+            // Try to auto-start music after page loads
+            // Multiple attempts with delays to ensure it works
+            setTimeout(() => {
+                if (window.unmuteAndPlay && !musicUnmuted) {
+                    console.log('🎵 Otomatik başlatma denemesi (sayfa yüklendi, 2 saniye sonra)...');
+                    window.unmuteAndPlay();
+                }
+            }, 2000);
+            
+            setTimeout(() => {
+                if (window.unmuteAndPlay && !musicUnmuted) {
+                    console.log('🎵 Otomatik başlatma denemesi (sayfa yüklendi, 4 saniye sonra)...');
+                    window.unmuteAndPlay();
+                }
+            }, 4000);
+            
+            setTimeout(() => {
+                if (window.unmuteAndPlay && !musicUnmuted) {
+                    console.log('🎵 Otomatik başlatma denemesi (sayfa yüklendi, 6 saniye sonra)...');
+                    window.unmuteAndPlay();
+                }
+            }, 6000);
+        }
+        
         // Run on load
         window.addEventListener('load', () => {
             hideCutTables();
             setTimeout(showTablesRandomly, 100); // Small delay to ensure layout is ready
             setTimeout(showBrideGroom, 2000); // Show bride and groom after 2 seconds
+            autoStartMusic(); // Auto-start music
         });
+        
+        // Also try on page reload/refresh
+        if (document.readyState === 'complete') {
+            autoStartMusic();
+        }
         
         // Run on resize
         window.addEventListener('resize', () => {
