@@ -1,0 +1,10 @@
+# Jekyll configuration - disable all Jekyll processing
+plugins: []
+safe: true
+source: .
+destination: _site
+theme: null
+exclude:
+  - .nojekyll
+  - _config.yml
+
