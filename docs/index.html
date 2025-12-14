@@ -13,12 +13,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rozha+One&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Splash Screen / Cover Screen -->
     <div id="splash-screen" class="splash-screen">
         <div class="splash-content">
+            <img src="logo.png" alt="Logo" class="splash-logo">
             <h1 class="splash-title">Nursu & Hakan</h1>
             <img src="rings.png" alt="Yüzükler" class="splash-rings">
         </div>
@@ -188,13 +192,79 @@
     </div>
     <div class="names-container">
         <h1 class="couple-names">Nursu & Hakan</h1>
-        <p class="event-date">15 ŞUBAT 2026</p>
+        <p class="event-date">
+            <a href="https://share.google/S95nR7FDPxmbDPB29" target="_blank" class="event-location-link">Tekirdağ Yelken Spor Kulübü</a>
+            <span class="date-dot">•</span> 15 ŞUBAT 2026 <span class="date-dot">•</span> 18.00
+        </p>
         <p class="invitation-message">Nişan törenimizde sizleri de aramızda görmekten mutluluk duyarız.</p>
         <div class="family-names-container">
-            <p class="family-name-left">Örsel Ailesi</p>
-            <p class="family-name-right">Aytaç Ailesi</p>
+            <p class="family-name">Örsel Ailesi</p>
+            <span class="family-separator">&</span>
+            <p class="family-name">Aytaç Ailesi</p>
         </div>
-        <p class="event-location">KONUM: TEKİRDAĞ</p>
+        <div class="countdown-container">
+            <div class="countdown-item">
+                <div class="countdown-number" id="countdown-days">0</div>
+                <div class="countdown-label">Gün</div>
+            </div>
+            <div class="countdown-item">
+                <div class="countdown-number" id="countdown-hours">0</div>
+                <div class="countdown-label">Saat</div>
+            </div>
+            <div class="countdown-item">
+                <div class="countdown-number" id="countdown-minutes">0</div>
+                <div class="countdown-label">Dakika</div>
+            </div>
+            <div class="countdown-item">
+                <div class="countdown-number" id="countdown-seconds">0</div>
+                <div class="countdown-label">Saniye</div>
+            </div>
+        </div>
+        <div class="action-buttons">
+            <button class="rsvp-button" id="rsvp-button">Katılım Durumu</button>
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Nişan+Töreni+-+Nursu+%26+Hakan&dates=20260215T150000Z/20260215T200000Z&details=Nişan+törenimizde+sizleri+de+aramızda+görmekten+mutluluk+duyarız.&location=Tekirdağ+Yelken+Spor+Kulübü" target="_blank" class="calendar-button" id="calendar-button">Takvime Ekle</a>
+        </div>
+    </div>
+    
+    <!-- RSVP Modal -->
+    <div class="rsvp-modal" id="rsvp-modal">
+        <div class="rsvp-modal-content">
+            <span class="rsvp-close" id="rsvp-close">&times;</span>
+            <h2 class="rsvp-title">Katılım Durumu</h2>
+            <form class="rsvp-form" id="rsvp-form">
+                <div class="rsvp-form-group">
+                    <label for="rsvp-firstname">İsim *</label>
+                    <input type="text" id="rsvp-firstname" name="firstname" required>
+                </div>
+                <div class="rsvp-form-group">
+                    <label for="rsvp-lastname">Soyisim *</label>
+                    <input type="text" id="rsvp-lastname" name="lastname" required>
+                </div>
+                <div class="rsvp-form-group">
+                    <label>Katılım Durumu *</label>
+                    <div class="attendance-options">
+                        <label class="attendance-option">
+                            <input type="radio" name="attendance" value="yes" required>
+                            <span>Geleceğim</span>
+                        </label>
+                        <label class="attendance-option">
+                            <input type="radio" name="attendance" value="no" required>
+                            <span>Gelemeyeceğim</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="rsvp-form-group" id="guest-count-group">
+                    <label for="rsvp-guest-count">Kişi Sayısı *</label>
+                    <input type="number" id="rsvp-guest-count" name="guestCount" min="1" max="20" value="1">
+                </div>
+                <div class="rsvp-form-group">
+                    <button type="submit" class="rsvp-submit">Gönder</button>
+                </div>
+            </form>
+            <div class="rsvp-success" id="rsvp-success" style="display: none;">
+                <p id="rsvp-success-message"></p>
+            </div>
+        </div>
     </div>
     <div class="bride-groom-container">
         <img src="bride-and-groom.png" alt="Gelin ve Damat" class="bride-groom-image">
@@ -354,10 +424,219 @@
             });
         }
         
+        /**
+         * Check if table significantly overlaps with bride and groom image
+         * Only removes table if it's actually overlapping the image boundaries
+         * @param {DOMRect} brideGroomRect - Bride and groom image rectangle
+         * @param {DOMRect} tableRect - Table rectangle
+         * @returns {boolean} - True if table should be removed
+         */
+        function shouldRemoveTable(brideGroomRect, tableRect) {
+            // First check: If table is completely above or below the image, don't remove
+            if (tableRect.bottom < brideGroomRect.top || tableRect.top > brideGroomRect.bottom) {
+                return false;
+            }
+            
+            // Second check: If table is completely to the left or right of the image, don't remove
+            if (tableRect.right < brideGroomRect.left || tableRect.left > brideGroomRect.right) {
+                return false;
+            }
+            
+            // Calculate table center point FIRST
+            const tableCenterX = tableRect.left + (tableRect.width / 2);
+            const tableCenterY = tableRect.top + (tableRect.height / 2);
+            
+            // PRIMARY CHECK: If table center is inside bride and groom image, remove it
+            const isCenterInside = tableCenterX >= brideGroomRect.left &&
+                                  tableCenterX <= brideGroomRect.right &&
+                                  tableCenterY >= brideGroomRect.top &&
+                                  tableCenterY <= brideGroomRect.bottom;
+            
+            if (isCenterInside) {
+                return true; // Center is inside, definitely remove
+            }
+            
+            // SECONDARY CHECK: Only if center is not inside, check overlap percentage
+            // Calculate overlap area
+            const overlapLeft = Math.max(brideGroomRect.left, tableRect.left);
+            const overlapRight = Math.min(brideGroomRect.right, tableRect.right);
+            const overlapTop = Math.max(brideGroomRect.top, tableRect.top);
+            const overlapBottom = Math.min(brideGroomRect.bottom, tableRect.bottom);
+            
+            // If no actual overlap, don't remove
+            if (overlapRight <= overlapLeft || overlapBottom <= overlapTop) {
+                return false;
+            }
+            
+            const overlapWidth = overlapRight - overlapLeft;
+            const overlapHeight = overlapBottom - overlapTop;
+            const overlapArea = overlapWidth * overlapHeight;
+            
+            // Calculate table area
+            const tableArea = tableRect.width * tableRect.height;
+            
+            // Calculate overlap percentage
+            const overlapPercentage = (overlapArea / tableArea) * 100;
+            
+            // Remove table ONLY if more than 50% of table area overlaps (very strict)
+            // This ensures we only remove tables that are truly overlapping, not just touching
+            return overlapPercentage > 50;
+        }
+        
+        /**
+         * Remove guest tables that overlap with bride and groom image
+         * This function is responsive and works for all screen sizes
+         * Only removes tables with significant overlap (center inside or >30% area)
+         */
+        function removeOverlappingTables() {
+            const brideGroomContainer = document.querySelector('.bride-groom-container');
+            const brideGroomImage = document.querySelector('.bride-groom-image');
+            
+            if (!brideGroomContainer || !brideGroomImage) {
+                console.log('⚠️ Gelin ve damat görseli bulunamadı');
+                return;
+            }
+            
+            // Get the actual bounding rectangle of the bride and groom image
+            // Use the image element itself, not the container, for accurate coordinates
+            const originalRect = brideGroomImage.getBoundingClientRect();
+            
+            // Determine screen size for responsive shrink percentage
+            const screenWidth = window.innerWidth;
+            const isMobile = screenWidth <= 480;
+            const isTablet = screenWidth > 480 && screenWidth <= 768;
+            
+            // Adjust shrink percentage based on screen size
+            // Mobile and tablet need more aggressive shrinking due to smaller screens
+            let shrinkPercentage;
+            if (isMobile) {
+                shrinkPercentage = 0.20; // 20% from each side for mobile (more precise)
+            } else if (isTablet) {
+                shrinkPercentage = 0.18; // 18% from each side for tablet
+            } else {
+                shrinkPercentage = 0.15; // 15% from each side for desktop
+            }
+            
+            const widthShrink = originalRect.width * shrinkPercentage;
+            const heightShrink = originalRect.height * shrinkPercentage;
+            
+            // Create a smaller detection rectangle (centered)
+            const brideGroomRect = {
+                left: originalRect.left + widthShrink,
+                top: originalRect.top + heightShrink,
+                right: originalRect.right - widthShrink,
+                bottom: originalRect.bottom - heightShrink,
+                width: originalRect.width - (widthShrink * 2),
+                height: originalRect.height - (heightShrink * 2)
+            };
+            
+            console.log('🔍 Gelin ve damat koordinatları (küçültülmüş alan):', {
+                screenSize: isMobile ? 'Mobile' : (isTablet ? 'Tablet' : 'Desktop'),
+                shrinkPercentage: (shrinkPercentage * 100).toFixed(0) + '%',
+                original: {
+                    left: originalRect.left.toFixed(2),
+                    top: originalRect.top.toFixed(2),
+                    right: originalRect.right.toFixed(2),
+                    bottom: originalRect.bottom.toFixed(2),
+                    width: originalRect.width.toFixed(2),
+                    height: originalRect.height.toFixed(2)
+                },
+                detection: {
+                    left: brideGroomRect.left.toFixed(2),
+                    top: brideGroomRect.top.toFixed(2),
+                    right: brideGroomRect.right.toFixed(2),
+                    bottom: brideGroomRect.bottom.toFixed(2),
+                    width: brideGroomRect.width.toFixed(2),
+                    height: brideGroomRect.height.toFixed(2)
+                }
+            });
+            
+            // Get all visible guest tables
+            const allTables = document.querySelectorAll('.table-item');
+            const container = document.querySelector('.tables-container');
+            const containerRect = container ? container.getBoundingClientRect() : null;
+            
+            let removedCount = 0;
+            let checkedCount = 0;
+            
+            allTables.forEach((table, index) => {
+                // Only check tables that are currently visible
+                if (table.style.display === 'none' || table.style.opacity === '0') {
+                    return; // Skip already hidden tables
+                }
+                
+                // Get table's bounding rectangle
+                const tableRect = table.getBoundingClientRect();
+                
+                // Check if table is within container bounds (if container exists)
+                if (containerRect) {
+                    const isTableVisible = tableRect.top >= containerRect.top && 
+                                         tableRect.bottom <= containerRect.bottom &&
+                                         tableRect.left >= containerRect.left &&
+                                         tableRect.right <= containerRect.right;
+                    
+                    if (!isTableVisible) {
+                        return; // Skip tables outside container
+                    }
+                }
+                
+                checkedCount++;
+                
+                // Check if table should be removed (significant overlap)
+                if (shouldRemoveTable(brideGroomRect, tableRect)) {
+                    // Calculate overlap details for logging
+                    const overlapLeft = Math.max(brideGroomRect.left, tableRect.left);
+                    const overlapRight = Math.min(brideGroomRect.right, tableRect.right);
+                    const overlapTop = Math.max(brideGroomRect.top, tableRect.top);
+                    const overlapBottom = Math.min(brideGroomRect.bottom, tableRect.bottom);
+                    const overlapWidth = overlapRight - overlapLeft;
+                    const overlapHeight = overlapBottom - overlapTop;
+                    const overlapArea = overlapWidth * overlapHeight;
+                    const tableArea = tableRect.width * tableRect.height;
+                    const overlapPercentage = (overlapArea / tableArea) * 100;
+                    
+                    // Check if center is inside
+                    const tableCenterX = tableRect.left + (tableRect.width / 2);
+                    const tableCenterY = tableRect.top + (tableRect.height / 2);
+                    const isCenterInside = tableCenterX >= brideGroomRect.left &&
+                                          tableCenterX <= brideGroomRect.right &&
+                                          tableCenterY >= brideGroomRect.top &&
+                                          tableCenterY <= brideGroomRect.bottom;
+                    
+                    console.log(`🗑️ Çakışan masa kaldırılıyor (${index}):`, {
+                        tableCenter: { x: tableCenterX.toFixed(2), y: tableCenterY.toFixed(2) },
+                        centerInside: isCenterInside,
+                        overlapPercentage: overlapPercentage.toFixed(2) + '%',
+                        tableSize: { width: tableRect.width.toFixed(2), height: tableRect.height.toFixed(2) }
+                    });
+                    
+                    // Remove the overlapping table
+                    table.style.opacity = '0';
+                    table.style.display = 'none';
+                    removedCount++;
+                }
+            });
+            
+            console.log(`✅ ${checkedCount} masa kontrol edildi, ${removedCount} çakışan masa kaldırıldı`);
+        }
+        
         function showBrideGroom() {
             const brideGroom = document.querySelector('.bride-groom-container');
             if (brideGroom) {
                 brideGroom.style.opacity = '1';
+                
+                // Wait a bit for the image to render and get accurate coordinates
+                // Then remove overlapping tables
+                // Mobile and tablet need more time for layout to stabilize
+                const screenWidth = window.innerWidth;
+                const isMobile = screenWidth <= 480;
+                const isTablet = screenWidth > 480 && screenWidth <= 768;
+                const delay = isMobile ? 200 : (isTablet ? 150 : 100);
+                
+                setTimeout(() => {
+                    removeOverlappingTables();
+                }, delay);
+                
                 // Start flower rain after bride-groom appears
                 setTimeout(startFlowerRain, 500);
             }
@@ -537,14 +816,71 @@
                     
                     // Show additional info after message
                     const familyNamesContainer = document.querySelector('.family-names-container');
-                    const eventLocation = document.querySelector('.event-location');
                     
                     setTimeout(() => {
                         if (familyNamesContainer) familyNamesContainer.style.opacity = '1';
-                        if (eventLocation) eventLocation.style.opacity = '1';
+                        
+                        // Show countdown after family names
+                        const countdownContainer = document.querySelector('.countdown-container');
+                        if (countdownContainer) {
+                            countdownContainer.style.opacity = '1';
+                            initCountdown();
+                        }
+                        
+                        // Show action buttons
+                        const actionButtons = document.querySelector('.action-buttons');
+                        if (actionButtons) {
+                            actionButtons.style.opacity = '1';
+                        }
                     }, 300);
                 }, 500); // 500ms delay after couple names appear
             }
+        }
+        
+        // Countdown Timer
+        function initCountdown() {
+            // Target date: 15 ŞUBAT 2026 (Turkey timezone)
+            const targetDate = new Date('2026-02-15T00:00:00+03:00').getTime();
+            
+            const daysElement = document.getElementById('countdown-days');
+            const hoursElement = document.getElementById('countdown-hours');
+            const minutesElement = document.getElementById('countdown-minutes');
+            const secondsElement = document.getElementById('countdown-seconds');
+            
+            if (!daysElement || !hoursElement || !minutesElement || !secondsElement) {
+                console.log('⚠️ Geri sayım elementleri bulunamadı');
+                return;
+            }
+            
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = targetDate - now;
+                
+                if (distance < 0) {
+                    // Event has passed
+                    daysElement.textContent = '0';
+                    hoursElement.textContent = '0';
+                    minutesElement.textContent = '0';
+                    secondsElement.textContent = '0';
+                    return;
+                }
+                
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                daysElement.textContent = days;
+                hoursElement.textContent = hours.toString().padStart(2, '0');
+                minutesElement.textContent = minutes.toString().padStart(2, '0');
+                secondsElement.textContent = seconds.toString().padStart(2, '0');
+            }
+            
+            // Update immediately
+            updateCountdown();
+            
+            // Update every second
+            setInterval(updateCountdown, 1000);
         }
         
         // Splash screen handler
@@ -660,6 +996,121 @@
         } else {
             document.addEventListener('DOMContentLoaded', () => {
                 initSplashScreen();
+            });
+        }
+        
+        // RSVP Modal functionality
+        function initRSVP() {
+            const rsvpButton = document.getElementById('rsvp-button');
+            const rsvpModal = document.getElementById('rsvp-modal');
+            const rsvpClose = document.getElementById('rsvp-close');
+            const rsvpForm = document.getElementById('rsvp-form');
+            const attendanceRadios = document.querySelectorAll('input[name="attendance"]');
+            const guestCountInput = document.getElementById('rsvp-guest-count');
+            const rsvpSuccess = document.getElementById('rsvp-success');
+            
+            if (!rsvpButton || !rsvpModal || !rsvpClose || !rsvpForm) {
+                console.log('⚠️ RSVP elementleri bulunamadı');
+                return;
+            }
+            
+            // Open modal
+            rsvpButton.addEventListener('click', () => {
+                rsvpModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close modal
+            rsvpClose.addEventListener('click', () => {
+                rsvpModal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close modal when clicking outside
+            rsvpModal.addEventListener('click', (e) => {
+                if (e.target === rsvpModal) {
+                    rsvpModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Handle radio button selection styling
+            attendanceRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    // Remove selected class from all options
+                    document.querySelectorAll('.attendance-option').forEach(option => {
+                        option.classList.remove('selected');
+                    });
+                    // Add selected class to checked option's parent
+                    if (radio.checked) {
+                        radio.closest('.attendance-option').classList.add('selected');
+                    }
+                });
+            });
+            
+            // Handle form submission
+            rsvpForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const selectedAttendance = document.querySelector('input[name="attendance"]:checked');
+                
+                const formData = {
+                    firstname: document.getElementById('rsvp-firstname').value,
+                    lastname: document.getElementById('rsvp-lastname').value,
+                    attendance: selectedAttendance ? selectedAttendance.value : '',
+                    guestCount: parseInt(guestCountInput.value) || 1
+                };
+                
+                console.log('RSVP Form Data:', formData);
+                
+                // Here you would typically send data to a server
+                // For now, we'll just show success message
+                
+                // Hide form and show success message
+                rsvpForm.style.display = 'none';
+                if (rsvpSuccess) {
+                    const successMessage = document.getElementById('rsvp-success-message');
+                    if (successMessage) {
+                        // Set message based on attendance
+                        if (selectedAttendance && selectedAttendance.value === 'yes') {
+                            successMessage.textContent = 'Sizleri aramızda görmekten mutluluk duyacağız.';
+                        } else {
+                            successMessage.textContent = 'Yine de sizleri düşündüğümüzü bilmenizi isteriz.';
+                        }
+                    }
+                    rsvpSuccess.style.display = 'block';
+                }
+                
+                // Close modal after 5.5 seconds (give time to read the message)
+                setTimeout(() => {
+                    rsvpModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                    
+                    // Reset form after closing
+                    setTimeout(() => {
+                        rsvpForm.reset();
+                        rsvpForm.style.display = 'flex';
+                        if (rsvpSuccess) rsvpSuccess.style.display = 'none';
+                        if (guestCountInput) guestCountInput.value = '1';
+                        // Remove selected class from attendance options
+                        document.querySelectorAll('.attendance-option').forEach(option => {
+                            option.classList.remove('selected');
+                        });
+                    }, 300);
+                }, 5500);
+            });
+        }
+        
+        // Initialize RSVP when page loads
+        window.addEventListener('load', () => {
+            initRSVP();
+        });
+        
+        if (document.readyState === 'complete') {
+            initRSVP();
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                initRSVP();
             });
         }
         
