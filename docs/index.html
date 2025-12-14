@@ -219,15 +219,23 @@
         
         let audioPlayer;
         let musicUnmuted = false; // Global flag to track if music is unmuted
+        let audioPlayerInitialized = false; // Prevent multiple initializations
         
         // Initialize Audio Player
         function initAudioPlayer() {
+            // Prevent multiple initializations
+            if (audioPlayerInitialized) {
+                console.log('⚠️ Audio player zaten başlatılmış');
+                return;
+            }
+            
             audioPlayer = document.getElementById('music-player');
             if (!audioPlayer) {
                 console.error('❌ Audio player bulunamadı');
                 return;
             }
             
+            audioPlayerInitialized = true;
             console.log('✅ Audio player bulundu');
             
             // Start muted for autoplay compatibility
@@ -240,13 +248,9 @@
                 console.log('✅ Audio hazır (canplaythrough)');
             }, { once: true });
             
-            // Try to load and play (muted) for preloading
-            audioPlayer.load(); // Force load
-            audioPlayer.play().then(() => {
-                console.log('▶️ Müzik yükleniyor (sessiz)');
-            }).catch((e) => {
-                console.log('Müzik oynatılamadı (normal, kullanıcı etkileşimi gerekli):', e);
-            });
+            // Don't try to play here - wait for user interaction
+            // Just prepare the player
+            console.log('🎵 Audio player hazır, kullanıcı etkileşimi bekleniyor...');
             
             // Global function to unmute and play
             window.unmuteAndPlay = function() {
@@ -546,39 +550,49 @@
                 // If audio player exists, start music directly
                 if (audioPlayer) {
                     console.log('🎵 Müzik başlatılıyor (kullanıcı etkileşimi ile)...');
-                    try {
-                        // Reset to beginning
-                        audioPlayer.currentTime = 0;
-                        
-                        // Unmute and set volume
-                        audioPlayer.muted = false;
-                        audioPlayer.volume = 1.0;
-                        
-                        // Play the audio
-                        const playPromise = audioPlayer.play();
-                        if (playPromise !== undefined) {
-                            playPromise.then(() => {
-                                musicUnmuted = true;
-                                console.log('✅ Müzik çalıyor (ses açık)');
-                            }).catch((e) => {
-                                console.error('❌ Müzik oynatılamadı:', e);
-                                musicUnmuted = false;
-                                
-                                // Retry after a short delay
-                                setTimeout(() => {
-                                    try {
-                                        audioPlayer.play();
-                                        musicUnmuted = true;
-                                        console.log('✅ Müzik tekrar denendi ve çalıyor');
-                                    } catch (retryError) {
-                                        console.error('❌ Müzik tekrar denemesi başarısız:', retryError);
-                                    }
-                                }, 100);
-                            });
+                    
+                    // Reset to beginning FIRST
+                    audioPlayer.currentTime = 0;
+                    
+                    // Unmute and set volume
+                    audioPlayer.muted = false;
+                    audioPlayer.volume = 1.0;
+                    
+                    // Small delay to ensure currentTime is set
+                    setTimeout(() => {
+                        try {
+                            // Play the audio
+                            const playPromise = audioPlayer.play();
+                            if (playPromise !== undefined) {
+                                playPromise.then(() => {
+                                    musicUnmuted = true;
+                                    console.log('✅ Müzik çalıyor (ses açık)');
+                                }).catch((e) => {
+                                    console.error('❌ Müzik oynatılamadı:', e);
+                                    musicUnmuted = false;
+                                    
+                                    // Retry after a short delay
+                                    setTimeout(() => {
+                                        try {
+                                            audioPlayer.currentTime = 0;
+                                            audioPlayer.muted = false;
+                                            audioPlayer.volume = 1.0;
+                                            audioPlayer.play().then(() => {
+                                                musicUnmuted = true;
+                                                console.log('✅ Müzik tekrar denendi ve çalıyor');
+                                            }).catch((retryError) => {
+                                                console.error('❌ Müzik tekrar denemesi başarısız:', retryError);
+                                            });
+                                        } catch (retryError) {
+                                            console.error('❌ Müzik tekrar denemesi hatası:', retryError);
+                                        }
+                                    }, 200);
+                                });
+                            }
+                        } catch (e) {
+                            console.error('❌ Müzik başlatma hatası:', e);
                         }
-                    } catch (e) {
-                        console.error('❌ Müzik başlatma hatası:', e);
-                    }
+                    }, 50);
                 } else if (window.unmuteAndPlay) {
                     // Fallback to global function
                     console.log('⚠️ Audio player bulunamadı, global fonksiyon kullanılıyor');
