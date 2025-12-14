@@ -419,6 +419,9 @@
             flower.style.width = randomSize + 'px';
             flower.style.height = 'auto';
             
+            // Random rotation for landing (unique for each flower)
+            const randomRotation = Math.random() * 360; // 0-360 degrees
+            
             // Random animation duration (daha hızlı)
             const randomDuration = 1.5 + Math.random() * 1.5; // 1.5-3 saniye arası
             flower.style.animationDuration = randomDuration + 's';
@@ -428,6 +431,37 @@
             flower.style.animationDelay = randomDelay + 's';
             
             container.appendChild(flower);
+            
+            // Calculate landing position after image loads
+            const viewportHeight = window.innerHeight;
+            let actualFlowerHeight = randomSize; // Default estimate
+            
+            // Wait for image to load to get actual height
+            flower.onload = function() {
+                actualFlowerHeight = flower.offsetHeight || flower.naturalHeight || randomSize;
+                const landingPosition = viewportHeight - actualFlowerHeight;
+                flower.style.setProperty('--landing-position', landingPosition + 'px');
+            };
+            
+            // If image already loaded
+            if (flower.complete) {
+                actualFlowerHeight = flower.offsetHeight || flower.naturalHeight || randomSize;
+                const landingPosition = viewportHeight - actualFlowerHeight;
+                flower.style.setProperty('--landing-position', landingPosition + 'px');
+            }
+            
+            // After animation completes, ensure flower stays at bottom with random rotation
+            const totalAnimationTime = (randomDuration + randomDelay) * 1000;
+            setTimeout(() => {
+                // Get actual flower height
+                const finalHeight = flower.offsetHeight || flower.naturalHeight || actualFlowerHeight;
+                const finalLandingPosition = viewportHeight - finalHeight;
+                
+                // Stop animation and position at bottom with unique random rotation
+                flower.style.animation = 'none';
+                flower.style.transform = `translateY(${finalLandingPosition}px) rotate(${randomRotation}deg)`;
+                flower.style.top = '0';
+            }, totalAnimationTime);
             
             // Hide bride and groom image before frame appears
             if (isFirst && !firstFlowerLanded) {
