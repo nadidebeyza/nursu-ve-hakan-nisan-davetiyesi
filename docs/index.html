@@ -18,7 +18,15 @@
 <body>
     <!-- Splash Screen / Cover Screen -->
     <div id="splash-screen" class="splash-screen">
-        <h1 class="splash-title">Nursu & Hakan</h1>
+        <div class="splash-content">
+            <h1 class="splash-title">Nursu & Hakan</h1>
+            <img src="rings.png" alt="Yüzükler" class="splash-rings">
+        </div>
+        <div class="splash-indicator">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 10L12 15L17 10" stroke="#44442b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
     </div>
     
     <!-- Hidden Audio Player -->
@@ -440,6 +448,29 @@
             // Show frame background when tables disappear
             document.body.classList.add('show-frame');
             
+            // Force reload frame images with cache-busting timestamp
+            const timestamp = new Date().getTime();
+            // Check both width and orientation for better mobile detection
+            const isMobile = window.innerWidth <= 480 || (window.innerWidth <= 768 && window.matchMedia('(orientation: portrait)').matches);
+            
+            console.log('Frame gösteriliyor - Genişlik:', window.innerWidth, 'Mobil:', isMobile);
+            
+            if (isMobile) {
+                // Mobile: use portrait frame
+                document.body.style.backgroundImage = `url('frame-portrait.png?v=${timestamp}')`;
+                document.body.style.backgroundSize = 'contain';
+                console.log('✅ Portrait frame yüklendi');
+            } else {
+                // Desktop/Tablet: use landscape frame
+                document.body.style.backgroundImage = `url('frame-landscape.png?v=${timestamp}')`;
+                if (window.innerWidth >= 769) {
+                    document.body.style.backgroundSize = '70% auto';
+                } else {
+                    document.body.style.backgroundSize = 'contain';
+                }
+                console.log('✅ Landscape frame yüklendi');
+            }
+            
             if (namesContainer && coupleNames) {
                 // First show couple names
                 namesContainer.style.opacity = '1';
@@ -510,6 +541,10 @@
         
         // Run on load
         window.addEventListener('load', () => {
+            // Force set background color to override any cached styles
+            // Use backgroundColor only, not background (to avoid overriding background-image)
+            document.body.style.backgroundColor = '#fffaee';
+            
             // Initialize splash screen first
             initSplashScreen();
         });
@@ -531,6 +566,25 @@
             });
             hideCutTables();
             setTimeout(showTablesRandomly, 100);
+            
+            // Update frame image if frame is already shown (cache-busting on resize)
+            if (document.body.classList.contains('show-frame')) {
+                const timestamp = new Date().getTime();
+                // Check both width and orientation for better mobile detection
+                const isMobile = window.innerWidth <= 480 || (window.innerWidth <= 768 && window.matchMedia('(orientation: portrait)').matches);
+                
+                if (isMobile) {
+                    document.body.style.backgroundImage = `url('frame-portrait.png?v=${timestamp}')`;
+                    document.body.style.backgroundSize = 'contain';
+                } else {
+                    document.body.style.backgroundImage = `url('frame-landscape.png?v=${timestamp}')`;
+                    if (window.innerWidth >= 769) {
+                        document.body.style.backgroundSize = '70% auto';
+                    } else {
+                        document.body.style.backgroundSize = 'contain';
+                    }
+                }
+            }
         });
     </script>
 </body>
