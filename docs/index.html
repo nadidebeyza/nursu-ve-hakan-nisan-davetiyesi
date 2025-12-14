@@ -235,7 +235,13 @@
             audioPlayer.muted = true;
             console.log('Sessiz mod aktif');
             
-            // Try to play (muted) for preloading
+            // Wait for audio to be ready
+            audioPlayer.addEventListener('canplaythrough', () => {
+                console.log('✅ Audio hazır (canplaythrough)');
+            }, { once: true });
+            
+            // Try to load and play (muted) for preloading
+            audioPlayer.load(); // Force load
             audioPlayer.play().then(() => {
                 console.log('▶️ Müzik yükleniyor (sessiz)');
             }).catch((e) => {
@@ -247,8 +253,11 @@
                 console.log('🖱️ unmuteAndPlay çağrıldı');
                 
                 if (!audioPlayer) {
-                    console.error('❌ Audio player bulunamadı');
-                    return;
+                    audioPlayer = document.getElementById('music-player');
+                    if (!audioPlayer) {
+                        console.error('❌ Audio player bulunamadı');
+                        return;
+                    }
                 }
                 
                 // Check if already unmuted
@@ -267,13 +276,16 @@
                 audioPlayer.volume = 1.0;
                 
                 // Play the audio
-                audioPlayer.play().then(() => {
-                    musicUnmuted = true;
-                    console.log('✅ Müzik çalıyor (ses açık)');
-                }).catch((e) => {
-                    console.error('Müzik oynatılamadı:', e);
-                    musicUnmuted = false;
-                });
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        musicUnmuted = true;
+                        console.log('✅ Müzik çalıyor (ses açık)');
+                    }).catch((e) => {
+                        console.error('Müzik oynatılamadı:', e);
+                        musicUnmuted = false;
+                    });
+                }
             };
         }
         
@@ -526,9 +538,54 @@
                 setTimeout(showBrideGroom, 2000); // Show bride and groom after 2 seconds
                 
                 // Start music from beginning with user interaction
-                if (window.unmuteAndPlay) {
+                // Ensure audio player is ready first
+                if (!audioPlayer) {
+                    audioPlayer = document.getElementById('music-player');
+                }
+                
+                // If audio player exists, start music directly
+                if (audioPlayer) {
+                    console.log('🎵 Müzik başlatılıyor (kullanıcı etkileşimi ile)...');
+                    try {
+                        // Reset to beginning
+                        audioPlayer.currentTime = 0;
+                        
+                        // Unmute and set volume
+                        audioPlayer.muted = false;
+                        audioPlayer.volume = 1.0;
+                        
+                        // Play the audio
+                        const playPromise = audioPlayer.play();
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                musicUnmuted = true;
+                                console.log('✅ Müzik çalıyor (ses açık)');
+                            }).catch((e) => {
+                                console.error('❌ Müzik oynatılamadı:', e);
+                                musicUnmuted = false;
+                                
+                                // Retry after a short delay
+                                setTimeout(() => {
+                                    try {
+                                        audioPlayer.play();
+                                        musicUnmuted = true;
+                                        console.log('✅ Müzik tekrar denendi ve çalıyor');
+                                    } catch (retryError) {
+                                        console.error('❌ Müzik tekrar denemesi başarısız:', retryError);
+                                    }
+                                }, 100);
+                            });
+                        }
+                    } catch (e) {
+                        console.error('❌ Müzik başlatma hatası:', e);
+                    }
+                } else if (window.unmuteAndPlay) {
+                    // Fallback to global function
+                    console.log('⚠️ Audio player bulunamadı, global fonksiyon kullanılıyor');
                     musicUnmuted = false; // Reset to allow unmute
                     window.unmuteAndPlay();
+                } else {
+                    console.error('❌ Müzik başlatılamadı: Audio player ve unmuteAndPlay fonksiyonu bulunamadı');
                 }
             };
             
