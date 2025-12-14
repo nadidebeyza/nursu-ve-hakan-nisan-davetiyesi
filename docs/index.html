@@ -443,21 +443,31 @@
                 console.log('🖱️ unmuteAndPlay çağrıldı');
                 
                 // Check if already unmuted by checking volume (more reliable)
-                if (musicUnmuted) {
-                    try {
-                        if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
-                            const isMuted = youtubePlayer.isMuted();
-                            if (!isMuted) {
-                                console.log('Müzik zaten açık (isMuted kontrolü), tekrar açılmaya gerek yok');
-                                return;
-                            } else {
-                                console.log('Müzik hala sessiz, tekrar açılmaya çalışılıyor...');
-                                musicUnmuted = false; // Reset flag if still muted
-                            }
+                // Always check, don't trust the flag
+                let shouldSkip = false;
+                try {
+                    if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
+                        const isMuted = youtubePlayer.isMuted();
+                        const volume = youtubePlayer.getVolume ? youtubePlayer.getVolume() : null;
+                        console.log('Ses kontrolü - isMuted:', isMuted, 'Volume:', volume);
+                        
+                        if (!isMuted && volume !== null && volume > 0) {
+                            console.log('✅ Müzik zaten açık (isMuted=false, volume>0), tekrar açılmaya gerek yok');
+                            musicUnmuted = true;
+                            shouldSkip = true;
+                        } else {
+                            console.log('⚠️ Müzik hala sessiz veya volume=0, tekrar açılmaya çalışılıyor...');
+                            musicUnmuted = false; // Reset flag if still muted
                         }
-                    } catch (e) {
-                        console.log('isMuted kontrol edilemedi:', e);
                     }
+                } catch (e) {
+                    console.log('isMuted/volume kontrol edilemedi:', e);
+                    // If we can't check, don't skip - try to unmute anyway
+                    musicUnmuted = false;
+                }
+                
+                if (shouldSkip && musicUnmuted) {
+                    return;
                 }
                 
                 console.log('Ses açılmaya çalışılıyor...');
@@ -558,28 +568,49 @@
                         }, 400);
                         
                         // Don't set musicUnmuted = true immediately
-                        // Instead, verify it worked after a delay
-                        setTimeout(() => {
-                            try {
-                                if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
-                                    const isMuted = youtubePlayer.isMuted();
-                                    if (!isMuted) {
-                                        musicUnmuted = true;
-                                        console.log('✅ Ses gerçekten açıldı! (isMuted kontrolü)');
+                        // Instead, verify it worked after a delay with multiple checks
+                        const verifyUnmute = (checkNumber, delay) => {
+                            setTimeout(() => {
+                                try {
+                                    if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
+                                        const isMuted = youtubePlayer.isMuted();
+                                        const volume = youtubePlayer.getVolume ? youtubePlayer.getVolume() : null;
+                                        console.log(`Ses kontrolü (${checkNumber}. kontrol, ${delay}ms sonra) - isMuted:`, isMuted, 'Volume:', volume);
+                                        
+                                        if (!isMuted && volume !== null && volume > 0) {
+                                            musicUnmuted = true;
+                                            console.log(`✅ Ses gerçekten açıldı! (${checkNumber}. kontrol - isMuted=false, volume=${volume})`);
+                                        } else {
+                                            console.log(`⚠️ Ses hala kapalı (${checkNumber}. kontrol), tekrar denenecek...`);
+                                            musicUnmuted = false; // Keep trying
+                                            
+                                            // If still muted after multiple checks, try again
+                                            if (checkNumber >= 3) {
+                                                console.log('🔄 3. kontrol sonrası hala sessiz, tekrar unmute deneniyor...');
+                                                setTimeout(() => {
+                                                    if (window.unmuteAndPlay) {
+                                                        musicUnmuted = false;
+                                                        window.unmuteAndPlay();
+                                                    }
+                                                }, 500);
+                                            }
+                                        }
                                     } else {
-                                        console.log('⚠️ Ses hala kapalı, tekrar denenecek...');
-                                        musicUnmuted = false; // Keep trying
+                                        // Fallback: don't set flag if we can't verify
+                                        console.log(`⚠️ Ses kontrolü yapılamadı (${checkNumber}. kontrol), flag set edilmedi`);
+                                        musicUnmuted = false; // Don't trust if we can't verify
                                     }
-                                } else {
-                                    // Fallback: assume it worked after 1 second
-                                    musicUnmuted = true;
-                                    console.log('🔊 Ses açıldı (fallback - isMuted kontrolü yapılamadı)');
+                                } catch (e) {
+                                    console.log(`Ses kontrolü hatası (${checkNumber}. kontrol):`, e);
+                                    musicUnmuted = false; // Don't trust on error
                                 }
-                            } catch (e) {
-                                console.log('Ses kontrolü yapılamadı:', e);
-                                musicUnmuted = true; // Fallback
-                            }
-                        }, 1000); // Check after 1 second
+                            }, delay);
+                        };
+                        
+                        // Multiple verification checks
+                        verifyUnmute(1, 1000);  // 1 second
+                        verifyUnmute(2, 2000);  // 2 seconds
+                        verifyUnmute(3, 3000);  // 3 seconds
                         
                         console.log('🔊 Ses açma komutları gönderildi, kontrol ediliyor...');
                     } catch (e) {
