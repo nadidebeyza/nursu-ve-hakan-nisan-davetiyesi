@@ -816,6 +816,30 @@
             }
         }
         
+        // Typewriter effect function
+        function typewriterEffect(element, text, speed = 50) {
+            if (!element || !text) return;
+            
+            // Clear the element and remove typing-complete class
+            element.textContent = '';
+            element.classList.remove('typing-complete');
+            
+            let index = 0;
+            
+            function type() {
+                if (index < text.length) {
+                    element.textContent += text.charAt(index);
+                    index++;
+                    setTimeout(type, speed);
+                } else {
+                    // Typing complete, remove cursor
+                    element.classList.add('typing-complete');
+                }
+            }
+            
+            type();
+        }
+        
         function showCoupleNames() {
             const namesContainer = document.querySelector('.names-container');
             const coupleNames = document.querySelector('.couple-names');
@@ -883,7 +907,11 @@
                 // Then show logo and message after a delay
                 setTimeout(() => {
                     if (logoContainer) logoContainer.style.opacity = '1';
-                    if (message) message.style.opacity = '1';
+                    if (message) {
+                        message.style.opacity = '1';
+                        // Start typewriter effect for invitation message
+                        typewriterEffect(message, message.textContent.trim(), 50);
+                    }
                     
                     // Show additional info after message
                     const familyNamesContainer = document.querySelector('.family-names-container');

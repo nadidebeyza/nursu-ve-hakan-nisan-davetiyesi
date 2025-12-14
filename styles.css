@@ -390,7 +390,7 @@ body.show-frame {
     }
     
     body.show-frame .logo-container {
-        top: 25% !important;
+        top: 28% !important;
     }
     
     body.show-frame .names-container {
@@ -534,6 +534,22 @@ body.show-frame {
     margin-right: auto;
     opacity: 0;
     transition: opacity 1s ease-in;
+}
+
+.invitation-message::after {
+    content: '|';
+    animation: blink 1s infinite;
+    color: #44442b;
+    margin-left: 2px;
+}
+
+.invitation-message.typing-complete::after {
+    display: none;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
 }
 
 .family-names-container {
@@ -1046,7 +1062,7 @@ body.show-frame {
 
 @media screen and (max-width: 480px) {
     .logo-image {
-        max-width: 60px; /* Küçültüldü: 80px -> 60px */
+        max-width: 50px !important; /* Küçültüldü: 60px -> 50px */
     }
     
     .couple-names {
