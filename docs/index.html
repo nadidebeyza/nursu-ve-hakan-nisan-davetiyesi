@@ -14,8 +14,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rozha+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <!-- YouTube IFrame API -->
-    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
     <!-- Splash Screen / Cover Screen -->
@@ -23,8 +21,10 @@
         <h1 class="splash-title">Nursu & Hakan</h1>
     </div>
     
-    <!-- Hidden YouTube Music Player -->
-    <div id="youtube-music"></div>
+    <!-- Hidden Audio Player -->
+    <audio id="music-player" loop preload="auto">
+        <source src="stephen-sanchez-until-I-found-you.mp3" type="audio/mpeg">
+    </audio>
     
     <div class="tables-container">
         <div class="table-item">
@@ -209,386 +209,81 @@
             }
         }
         
-        let youtubePlayer;
-        let playerReady = false;
+        let audioPlayer;
         let musicUnmuted = false; // Global flag to track if music is unmuted
-        let listenersAdded = false; // Track if listeners are already added
         
-        // Check if YT is available
-        function checkYouTubeAPI() {
-            console.log('YouTube API kontrol ediliyor...');
-            if (typeof YT !== 'undefined' && YT.Player) {
-                console.log('YouTube API bulundu!');
-                initYouTubePlayer();
-                return true;
-            } else {
-                console.log('YouTube API henüz yüklenmedi, bekleniyor...');
-                return false;
-            }
-        }
-        
-        // Initialize YouTube Player
-        function initYouTubePlayer() {
-            if (playerReady) {
-                console.log('Player zaten hazır, tekrar başlatılmıyor');
+        // Initialize Audio Player
+        function initAudioPlayer() {
+            audioPlayer = document.getElementById('music-player');
+            if (!audioPlayer) {
+                console.error('❌ Audio player bulunamadı');
                 return;
             }
             
-            console.log('Player başlatılıyor...');
-            try {
-                youtubePlayer = new YT.Player('youtube-music', {
-                    height: '1',
-                    width: '1',
-                    videoId: 'GxldQ9eX2wo',
-                    playerVars: {
-                        'autoplay': 1,
-                        'loop': 1,
-                        'playlist': 'GxldQ9eX2wo',
-                        'controls': 0,
-                        'showinfo': 0,
-                        'modestbranding': 1,
-                        'mute': 1,
-                        'enablejsapi': 1,
-                        'origin': window.location.origin || '*'
-                    },
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange,
-                        'onError': onPlayerError
-                    }
-                });
-                console.log('Player oluşturuldu');
-            } catch (e) {
-                console.error('Player oluşturulurken hata:', e);
-            }
-        }
-        
-        // YouTube IFrame API callback (backup)
-        window.onYouTubeIframeAPIReady = function() {
-            console.log('✅ onYouTubeIframeAPIReady çağrıldı');
-            if (!playerReady) {
-                initYouTubePlayer();
-            }
-        };
-        
-        // Multiple initialization strategies for GitHub Pages
-        function initializeYouTubePlayer() {
-            // Strategy 1: Check if API is already loaded
-            if (checkYouTubeAPI()) {
-                return;
-            }
-            
-            // Strategy 2: Wait for API to load
-            let attempts = 0;
-            const maxAttempts = 50; // 5 seconds max
-            const checkInterval = setInterval(() => {
-                attempts++;
-                if (checkYouTubeAPI()) {
-                    clearInterval(checkInterval);
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(checkInterval);
-                    console.error('❌ YouTube API yüklenemedi (max attempts reached)');
-                }
-            }, 100);
-        }
-        
-        // Start checking for API when page loads
-        window.addEventListener('load', () => {
-            console.log('📄 Sayfa yüklendi (load event), API kontrolü başlatılıyor');
-            initializeYouTubePlayer();
-        });
-        
-        // Also check immediately
-        console.log('🔍 İlk API kontrolü yapılıyor...');
-        if (document.readyState === 'loading') {
-            console.log('Document loading, DOMContentLoaded bekleniyor...');
-            document.addEventListener('DOMContentLoaded', () => {
-                console.log('📄 DOMContentLoaded event tetiklendi');
-                initializeYouTubePlayer();
-            });
-        } else {
-            console.log('Document zaten hazır, hemen kontrol ediliyor');
-            initializeYouTubePlayer();
-        }
-        
-        // Extra safety check after a delay
-        setTimeout(() => {
-            console.log('⏰ 2 saniye sonra kontrol...');
-            if (!playerReady) {
-                console.log('Player henüz hazır değil, tekrar kontrol ediliyor...');
-                initializeYouTubePlayer();
-            }
-        }, 2000);
-        
-        function onPlayerReady(event) {
-            console.log('✅ Player hazır!');
-            playerReady = true;
-            
-            // Set the global youtubePlayer variable to the actual player instance
-            youtubePlayer = event.target;
-            console.log('youtubePlayer set edildi:', youtubePlayer);
+            console.log('✅ Audio player bulundu');
             
             // Start muted for autoplay compatibility
-            try {
-                youtubePlayer.mute();
-                console.log('Sessiz mod aktif');
-            } catch (e) {
-                console.log('Sessiz mod ayarlanamadı:', e);
-            }
+            audioPlayer.volume = 0;
+            audioPlayer.muted = true;
+            console.log('Sessiz mod aktif');
             
-            // Try to play the video
-            try {
-                youtubePlayer.playVideo();
-                console.log('▶️ Video oynatılmaya başlandı (sessiz)');
-            } catch (e) {
-                console.error('Video oynatılamadı:', e);
-            }
+            // Try to play (muted) for preloading
+            audioPlayer.play().then(() => {
+                console.log('▶️ Müzik yükleniyor (sessiz)');
+            }).catch((e) => {
+                console.log('Müzik oynatılamadı (normal, kullanıcı etkileşimi gerekli):', e);
+            });
             
             // Global function to unmute and play
             window.unmuteAndPlay = function() {
                 console.log('🖱️ unmuteAndPlay çağrıldı');
                 
-                // Check if already unmuted by checking volume (more reliable)
-                // Always check, don't trust the flag
-                let shouldSkip = false;
-                try {
-                    if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
-                        const isMuted = youtubePlayer.isMuted();
-                        const volume = youtubePlayer.getVolume ? youtubePlayer.getVolume() : null;
-                        console.log('Ses kontrolü - isMuted:', isMuted, 'Volume:', volume);
-                        
-                        if (!isMuted && volume !== null && volume > 0) {
-                            console.log('✅ Müzik zaten açık (isMuted=false, volume>0), tekrar açılmaya gerek yok');
-                            musicUnmuted = true;
-                            shouldSkip = true;
-                        } else {
-                            console.log('⚠️ Müzik hala sessiz veya volume=0, tekrar açılmaya çalışılıyor...');
-                            musicUnmuted = false; // Reset flag if still muted
-                        }
-                    }
-                } catch (e) {
-                    console.log('isMuted/volume kontrol edilemedi:', e);
-                    // If we can't check, don't skip - try to unmute anyway
-                    musicUnmuted = false;
-                }
-                
-                if (shouldSkip && musicUnmuted) {
+                if (!audioPlayer) {
+                    console.error('❌ Audio player bulunamadı');
                     return;
                 }
                 
-                console.log('Ses açılmaya çalışılıyor...');
-                
-                // Try multiple ways to find the iframe
-                let iframe = null;
-                
-                // Method 1: Direct ID
-                const container = document.getElementById('youtube-music');
-                if (container) {
-                    // Method 2: Find iframe inside container
-                    iframe = container.querySelector('iframe');
-                    if (!iframe) {
-                        // Method 3: Find by tag name
-                        const iframes = container.getElementsByTagName('iframe');
-                        if (iframes.length > 0) {
-                            iframe = iframes[0];
-                        }
-                    }
+                // Check if already unmuted
+                if (musicUnmuted && !audioPlayer.muted && audioPlayer.volume > 0) {
+                    console.log('✅ Müzik zaten açık, tekrar açılmaya gerek yok');
+                    return;
                 }
                 
-                // Method 4: Find all iframes and check if any is YouTube
-                if (!iframe) {
-                    const allIframes = document.querySelectorAll('iframe');
-                    for (let i = 0; i < allIframes.length; i++) {
-                        if (allIframes[i].src && allIframes[i].src.includes('youtube.com')) {
-                            iframe = allIframes[i];
-                            break;
-                        }
-                    }
-                }
+                console.log('Ses açılıyor...');
                 
-                console.log('iframe bulundu mu?', !!iframe);
-                if (iframe) {
-                    console.log('iframe src:', iframe.src);
-                    console.log('iframe contentWindow var mı?', !!iframe.contentWindow);
-                }
+                // Reset to beginning
+                audioPlayer.currentTime = 0;
                 
-                if (iframe && iframe.contentWindow) {
-                    try {
-                        // Extract origin from iframe src dynamically
-                        let origin = 'https://www.youtube.com'; // Default
-                        if (iframe.src) {
-                            try {
-                                const url = new URL(iframe.src);
-                                origin = url.origin;
-                                console.log('Origin iframe src\'den çıkarıldı:', origin);
-                            } catch (e) {
-                                console.log('Origin çıkarılamadı, varsayılan kullanılıyor:', origin);
-                            }
-                        }
-                        
-                        console.log('postMessage gönderiliyor, origin:', origin);
-                        
-                        // Function to send command
-                        const sendCommand = (cmd, targetOrigin) => {
-                            try {
-                                iframe.contentWindow.postMessage(JSON.stringify(cmd), targetOrigin);
-                                console.log(`✅ postMessage gönderildi (${targetOrigin}):`, cmd.func);
-                                return true;
-                            } catch (e) {
-                                console.warn(`⚠️ postMessage hatası (${targetOrigin}):`, e);
-                                return false;
-                            }
-                        };
-                        
-                        // Send commands with proper format - try multiple origins
-                        // Don't include seekTo here - it's already called once before unmuteAndPlay
-                        const commands = [
-                            {event: 'command', func: 'unMute', args: ''},
-                            {event: 'command', func: 'playVideo', args: ''},
-                            {event: 'command', func: 'setVolume', args: [100]}
-                        ];
-                        
-                        // Try with extracted origin first
-                        commands.forEach((cmd, index) => {
-                            setTimeout(() => {
-                                sendCommand(cmd, origin);
-                            }, index * 50);
-                        });
-                        
-                        // Also try with wildcard origin as fallback
-                        setTimeout(() => {
-                            commands.forEach((cmd, index) => {
-                                setTimeout(() => {
-                                    sendCommand(cmd, '*');
-                                }, index * 50);
-                            });
-                        }, 200);
-                        
-                        // Try with explicit YouTube origins
-                        setTimeout(() => {
-                            commands.forEach((cmd, index) => {
-                                setTimeout(() => {
-                                    sendCommand(cmd, 'https://www.youtube.com');
-                                    sendCommand(cmd, 'https://youtube.com');
-                                }, index * 50);
-                            });
-                        }, 400);
-                        
-                        // Don't set musicUnmuted = true immediately
-                        // Instead, verify it worked after a delay with multiple checks
-                        const verifyUnmute = (checkNumber, delay) => {
-                            setTimeout(() => {
-                                try {
-                                    if (youtubePlayer && typeof youtubePlayer.isMuted === 'function') {
-                                        const isMuted = youtubePlayer.isMuted();
-                                        const volume = youtubePlayer.getVolume ? youtubePlayer.getVolume() : null;
-                                        console.log(`Ses kontrolü (${checkNumber}. kontrol, ${delay}ms sonra) - isMuted:`, isMuted, 'Volume:', volume);
-                                        
-                                        if (!isMuted && volume !== null && volume > 0) {
-                                            // Check if video is actually playing
-                                            const state = youtubePlayer.getPlayerState ? youtubePlayer.getPlayerState() : null;
-                                            console.log(`Ses açık, player state: ${state} (PLAYING=1, UNSTARTED=-1)`);
-                                            
-                                            if (state === YT.PlayerState.PLAYING) {
-                                                musicUnmuted = true;
-                                                console.log(`✅ Ses gerçekten açıldı ve video çalıyor! (${checkNumber}. kontrol - isMuted=false, volume=${volume}, state=PLAYING)`);
-                                            } else {
-                                                // Video not playing, try to start it
-                                                console.log(`⚠️ Ses açık ama video çalmıyor (state=${state}), video başlatılıyor...`);
-                                                try {
-                                                    youtubePlayer.playVideo();
-                                                    console.log('▶️ playVideo() çağrıldı');
-                                                } catch (e) {
-                                                    console.log('playVideo() hatası:', e);
-                                                }
-                                                musicUnmuted = false; // Keep flag false until video is playing
-                                            }
-                                        } else {
-                                            console.log(`⚠️ Ses hala kapalı (${checkNumber}. kontrol), tekrar denenecek...`);
-                                            musicUnmuted = false; // Keep trying
-                                            
-                                            // If still muted after multiple checks, try again
-                                            if (checkNumber >= 3) {
-                                                console.log('🔄 3. kontrol sonrası hala sessiz, tekrar unmute deneniyor...');
-                                                setTimeout(() => {
-                                                    if (window.unmuteAndPlay) {
-                                                        musicUnmuted = false;
-                                                        window.unmuteAndPlay();
-                                                    }
-                                                }, 500);
-                                            }
-                                        }
-                                    } else {
-                                        // Fallback: don't set flag if we can't verify
-                                        console.log(`⚠️ Ses kontrolü yapılamadı (${checkNumber}. kontrol), flag set edilmedi`);
-                                        musicUnmuted = false; // Don't trust if we can't verify
-                                    }
-                                } catch (e) {
-                                    console.log(`Ses kontrolü hatası (${checkNumber}. kontrol):`, e);
-                                    musicUnmuted = false; // Don't trust on error
-                                }
-                            }, delay);
-                        };
-                        
-                        // Multiple verification checks
-                        verifyUnmute(1, 1000);  // 1 second
-                        verifyUnmute(2, 2000);  // 2 seconds
-                        verifyUnmute(3, 3000);  // 3 seconds
-                        
-                        console.log('🔊 Ses açma komutları gönderildi, kontrol ediliyor...');
-                    } catch (e) {
-                        console.error('postMessage hatası:', e);
-                    }
-                } else {
-                    console.error('❌ iframe bulunamadı veya contentWindow yok');
-                    console.log('Tüm iframe\'ler:', document.querySelectorAll('iframe'));
-                }
+                // Unmute and set volume
+                audioPlayer.muted = false;
+                audioPlayer.volume = 1.0;
+                
+                // Play the audio
+                audioPlayer.play().then(() => {
+                    musicUnmuted = true;
+                    console.log('✅ Müzik çalıyor (ses açık)');
+                }).catch((e) => {
+                    console.error('Müzik oynatılamadı:', e);
+                    musicUnmuted = false;
+                });
             };
-            
-            // Add event listeners only once, but wait a bit for GitHub Pages
-            if (!listenersAdded) {
-                const addUnmuteListeners = () => {
-                    // Remove old listeners first to avoid duplicates
-                    try {
-                        document.body.removeEventListener('click', window.unmuteAndPlay, true);
-                        document.body.removeEventListener('touchstart', window.unmuteAndPlay, true);
-                    } catch (e) {
-                        // Ignore if listeners don't exist
-                    }
-                    
-                    // Add new listeners
-                    document.body.addEventListener('click', window.unmuteAndPlay, true);
-                    document.body.addEventListener('touchstart', window.unmuteAndPlay, true);
-                    document.addEventListener('click', window.unmuteAndPlay, true);
-                    document.addEventListener('touchstart', window.unmuteAndPlay, true);
-                    document.addEventListener('keydown', window.unmuteAndPlay, true);
-                    window.addEventListener('click', window.unmuteAndPlay, true);
-                    console.log('✅ Event listener\'lar eklendi');
-                };
-                
-                // Add listeners with delays for GitHub Pages compatibility
-                addUnmuteListeners();
-                setTimeout(addUnmuteListeners, 500);
-                setTimeout(addUnmuteListeners, 1000); // Extra delay for GitHub Pages
-                
-                listenersAdded = true;
-            }
         }
         
-        function onPlayerStateChange(event) {
-            console.log('Player durumu değişti:', event.data);
-            // YT.PlayerState.PLAYING = 1, PAUSED = 2, ENDED = 0
-            if (event.data === YT.PlayerState.PLAYING) {
-                console.log('▶️ Müzik çalıyor');
-            } else if (event.data === YT.PlayerState.PAUSED) {
-                console.log('⏸️ Video duraklatıldı');
-            } else if (event.data === YT.PlayerState.ENDED) {
-                console.log('⏹️ Video bitti');
-            }
-        }
+        // Initialize audio player when page loads
+        window.addEventListener('load', () => {
+            console.log('📄 Sayfa yüklendi, audio player başlatılıyor');
+            initAudioPlayer();
+        });
         
-        function onPlayerError(event) {
-            console.error('Player hatası:', event.data);
+        // Also try immediately if DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('📄 DOMContentLoaded event tetiklendi');
+                initAudioPlayer();
+            });
+        } else {
+            console.log('Document zaten hazır, hemen başlatılıyor');
+            initAudioPlayer();
         }
         
         function hideCutTables() {
@@ -799,25 +494,11 @@
                 setTimeout(showTablesRandomly, 100); // Small delay to ensure layout is ready
                 setTimeout(showBrideGroom, 2000); // Show bride and groom after 2 seconds
                 
-                // Start music from beginning with user interaction - only once
-                if (youtubePlayer && typeof youtubePlayer.seekTo === 'function') {
-                    try {
-                        // Reset video to beginning - only once, before unmuting
-                        youtubePlayer.seekTo(0, true);
-                        console.log('⏮️ Video başa alındı (seekTo 0)');
-                    } catch (e) {
-                        console.log('seekTo hatası:', e);
-                    }
+                // Start music from beginning with user interaction
+                if (window.unmuteAndPlay) {
+                    musicUnmuted = false; // Reset to allow unmute
+                    window.unmuteAndPlay();
                 }
-                
-                // Small delay to ensure seekTo completes before unmuting
-                setTimeout(() => {
-                    // Start music with user interaction
-                    if (window.unmuteAndPlay) {
-                        musicUnmuted = false; // Reset to allow unmute
-                        window.unmuteAndPlay();
-                    }
-                }, 100);
             };
             
             // Add click/touch listeners
