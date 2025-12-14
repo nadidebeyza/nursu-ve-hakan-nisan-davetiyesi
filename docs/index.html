@@ -578,8 +578,24 @@
                                         console.log(`Ses kontrolü (${checkNumber}. kontrol, ${delay}ms sonra) - isMuted:`, isMuted, 'Volume:', volume);
                                         
                                         if (!isMuted && volume !== null && volume > 0) {
-                                            musicUnmuted = true;
-                                            console.log(`✅ Ses gerçekten açıldı! (${checkNumber}. kontrol - isMuted=false, volume=${volume})`);
+                                            // Check if video is actually playing
+                                            const state = youtubePlayer.getPlayerState ? youtubePlayer.getPlayerState() : null;
+                                            console.log(`Ses açık, player state: ${state} (PLAYING=1, UNSTARTED=-1)`);
+                                            
+                                            if (state === YT.PlayerState.PLAYING) {
+                                                musicUnmuted = true;
+                                                console.log(`✅ Ses gerçekten açıldı ve video çalıyor! (${checkNumber}. kontrol - isMuted=false, volume=${volume}, state=PLAYING)`);
+                                            } else {
+                                                // Video not playing, try to start it
+                                                console.log(`⚠️ Ses açık ama video çalmıyor (state=${state}), video başlatılıyor...`);
+                                                try {
+                                                    youtubePlayer.playVideo();
+                                                    console.log('▶️ playVideo() çağrıldı');
+                                                } catch (e) {
+                                                    console.log('playVideo() hatası:', e);
+                                                }
+                                                musicUnmuted = false; // Keep flag false until video is playing
+                                            }
                                         } else {
                                             console.log(`⚠️ Ses hala kapalı (${checkNumber}. kontrol), tekrar denenecek...`);
                                             musicUnmuted = false; // Keep trying
@@ -663,13 +679,24 @@
                             const state = youtubePlayer.getPlayerState();
                             console.log('Player state:', state, '(PLAYING=1, PAUSED=2)');
                             
+                            // Try to start video if not playing
+                            if (state === YT.PlayerState.UNSTARTED || state === YT.PlayerState.ENDED) {
+                                console.log('Player UNSTARTED veya ENDED, video başlatılıyor...');
+                                try {
+                                    youtubePlayer.playVideo();
+                                    console.log('▶️ playVideo() çağrıldı (UNSTARTED/ENDED durumunda)');
+                                } catch (e) {
+                                    console.log('playVideo() hatası:', e);
+                                }
+                            }
+                            
                             // Only try to unmute if player is playing or ready
                             if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING || state === YT.PlayerState.CUED) {
                                 if (window.unmuteAndPlay && !musicUnmuted) {
                                     window.unmuteAndPlay();
                                 }
                             } else {
-                                console.log('Player henüz çalmıyor, tekrar denenecek...');
+                                console.log(`Player henüz çalmıyor (state=${state}), tekrar denenecek...`);
                             }
                         } catch (e) {
                             console.log('Player state kontrol edilemedi:', e);
