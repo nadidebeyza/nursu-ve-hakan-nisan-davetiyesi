@@ -383,7 +383,7 @@ body.show-frame {
     }
     
     body.show-frame .logo-container {
-        top: 25%;
+        top: 32%;
     }
     
     body.show-frame .names-container {
@@ -592,6 +592,7 @@ body.show-frame {
     pointer-events: auto;
     position: relative;
     z-index: 10;
+    white-space: nowrap;
 }
 
 .event-location-link:hover {
