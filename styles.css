@@ -390,7 +390,7 @@ body.show-frame {
     }
     
     body.show-frame .logo-container {
-        top: 24%;
+        top: 24% !important;
     }
     
     body.show-frame .names-container {
